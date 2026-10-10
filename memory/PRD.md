@@ -44,3 +44,12 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 
 ## Notes / Mocked
 - MOCKED: on-chain layer is simulated off-chain in MongoDB; tx hashes are placeholders (BscScan-format links); token deposits/transfers are simulated, not real BEP-20 transfers.
+
+## Admin Panel (2026-06, separate /admin shell)
+- Separate secure console at /admin with wallet-signature login + RBAC (6 roles: SUPER_ADMIN, FINANCE_ADMIN, MLM_ADMIN, OPERATIONS_ADMIN, SUPPORT_ADMIN, VIEW_ONLY) and immutable audit logging.
+- Super Admin seeded: admin@merqon.io bound to wallet 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Demo Super Admin Wallet button).
+- Modules (full depth): Dashboard (KPIs+charts), Members + Member Detail (actions/notes), MLM Network (sponsor/placement trees), Leaderboard, Rank Management, Deposits, Withdrawals (approval queue w/ auto-approve threshold), Income (ranged), Reconciliation, Profit Growth, Commission, Rewards (editable tiers), Autopool, Token & Blockchain, Treasury, Liquidity, Business Rules (versioned), Reports (+CSV export), Notifications, Support tickets, Admin Users & Roles (RBAC matrix), Audit Logs, System Health, System Settings, Emergency Center (gated controls).
+- Withdrawal flow changed: requests above withdraw_auto_approve_under become pending (admin approve/reject); small ones auto-complete.
+- Token/Treasury/Liquidity/Reconciliation are SIMULATED monitoring (no live BSC in v1).
+- Backend: /app/backend/admin_panel.py (build_admin_router + RBAC + audit). Frontend: /app/frontend/src/admin/*.
+- Testing: 47/47 admin backend tests PASS + full admin frontend e2e PASS (iteration_2.json). Member DApp regression green.
