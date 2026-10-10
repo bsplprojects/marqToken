@@ -1,0 +1,187 @@
+{
+  "project_info": {
+    "name": "MerqON",
+    "tagline": "Build for everyone",
+    "token_symbol": "MERQ",
+    "token_standard": "BEP-20",
+    "blockchain": "BNB Smart Chain (BSC)",
+    "app_type": "hybrid_fullstack (Web3 DApp & Institutional Membership Terminal)",
+    "vibe": "Ultra-premium international DeFi exchange aesthetic. High-density data metrics, sleek dark obsidian surfaces, warm metallic gold & cyber emerald accents, crisp typography, non-generic Web3 institutional financial product."
+  },
+  "design_identity": {
+    "theme": "Dark Mode First (Obsidian & Metallic BNB Gold)",
+    "archetype": "The Performance Pro & High-Contrast Swiss DeFi",
+    "emotional_tone": "Institutional trust, financial precision, technological prestige, mathematical transparency",
+    "core_principles": [
+      "Fusion over Imitation: Synthesize Bloomberg-style financial density with high-end Apple crystal glass and Web3 neon tracing accents.",
+      "Emotion First: Every visual state signals high value security and financial growth, avoiding cheap MLM tropes.",
+      "Content is King: Narrative flow moves from Instant Web3 Connectivity -> Live Wallet Metrics -> Dual Tree Network Intelligence -> Income Engine Breakdown -> Transparent BSC Ledger.",
+      "Data Density & Clarity: High contrast numerical displays with JetBrains Mono, clear badge indicators, and zero layout clutter.",
+      "Asymmetry & Tension: Bento grids with non-uniform card ratios for high visual engagement."
+    ]
+  },
+  "typography": {
+    "heading_font": "'Outfit', 'Plus Jakarta Sans', -apple-system, sans-serif",
+    "body_font": "'Inter', system-ui, sans-serif",
+    "mono_font": "'JetBrains Mono', 'Fira Code', monospace",
+    "hierarchy": {
+      "h1_hero": "text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight",
+      "h2_section": "text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight",
+      "h3_card_header": "text-xl sm:text-2xl font-semibold tracking-normal",
+      "h4_widget": "text-lg font-medium",
+      "body_text": "text-base text-slate-300 leading-relaxed",
+      "caption_mono": "font-mono text-xs sm:text-sm tracking-wider uppercase text-slate-400",
+      "stat_value": "font-mono text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight"
+    },
+    "rules": [
+      "DO NOT use Inter for main headings — use Outfit or Plus Jakarta Sans.",
+      "Use JetBrains Mono for all token balances, fiat amounts, wallet addresses, transaction hashes, and APY rates.",
+      "Overlines / badges MUST be uppercase with wide letter spacing (tracking-[0.2em]).",
+      "Headlines > 32px MUST use tracking-tight or tracking-tighter."
+    ]
+  },
+  "colors": {
+    "background_base": "#07090E",
+    "background_surface": "#0F172A",
+    "background_surface_hover": "#1E293B",
+    "background_card": "rgba(15, 23, 42, 0.75)",
+    "primary_gold": "#F3BA2F",
+    "primary_gold_hover": "#F0B90B",
+    "primary_gold_glow": "rgba(243, 186, 47, 0.25)",
+    "emerald_growth": "#10B981",
+    "cyan_accent": "#06B6D4",
+    "rose_decline": "#F43F5E",
+    "text_primary": "#F8FAFC",
+    "text_secondary": "#94A3B8",
+    "text_muted": "#64748B",
+    "border_subtle": "rgba(255, 255, 255, 0.08)",
+    "border_gold_accent": "rgba(243, 186, 47, 0.3)",
+    "glass_overlay": "backdrop-blur-xl bg-slate-950/70 border border-white/10",
+    "rules": [
+      "NEVER use pure black #000000; tint background greys with deep navy/obsidian #07090E.",
+      "DO NOT use #7351B7 or #1B93A4.",
+      "Buttons & active state hovers MUST explicitly declare hover text color (e.g. hover:bg-amber-400 hover:text-slate-950).",
+      "Maintain minimum 4.5:1 contrast ratio for all analytical text."
+    ]
+  },
+  "grids_and_layouts": {
+    "dashboard_grid": "grid grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-6 p-4 sm:p-6 lg:p-8",
+    "bento_ratios": {
+      "hero_card": "col-span-full lg:col-span-8 row-span-2",
+      "side_stat": "col-span-full md:col-span-4 row-span-1",
+      "tree_viewer": "col-span-full lg:col-span-8 row-span-3",
+      "income_breakdown": "col-span-full md:col-span-4 row-span-2"
+    },
+    "rules": [
+      "Containers with borders MUST have internal padding (p-6 or p-8) to prevent text collision.",
+      "All grid children in Framer Motion MUST have the grid span classes attached directly to motion.div.",
+      "Sidebar layout must be sticky with smooth collapsibility for desktop and drawer for mobile."
+    ]
+  },
+  "surface_strategies": {
+    "crystal_glass": "backdrop-blur-xl bg-slate-900/60 border border-slate-800/80 shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
+    "beam_card": "relative rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-amber-500/20 shadow-2xl overflow-hidden",
+    "grid_borders": "border-r border-b border-slate-800/50"
+  },
+  "key_functionalities": [
+    {
+      "feature": "Connect Wallet & Nonce Signature Auth",
+      "description": "MetaMask / WalletConnect modal simulation with cryptographic nonce signing, address formatting (0x12...abcd), and BSC network status badge."
+    },
+    {
+      "feature": "Member Dashboard",
+      "description": "MERQ token balance, live fiat valuation ($USD), income summary cards (Referral, Profit Growth, Autopool, Rewards), quick action buttons (Deposit, Withdraw, Refer)."
+    },
+    {
+      "feature": "Dual MLM Network Tree Visualization",
+      "description": "Interactive switchable viewer for Sponsor Tree (unilevel direct referrals) and Placement Tree (binary left/right leg structure with volume counters)."
+    },
+    {
+      "feature": "Income Engine & Earnings History",
+      "description": "Breakdown of 5 income streams (Referral Income, Profit Growth, Profit Growth Commission, Achievement Rewards, Autopool Matrix), filterable history table."
+    },
+    {
+      "feature": "Autopool Matrix",
+      "description": "Global matrix tier progression visualizer, slot status, auto-fill queue position, and claimable pool rewards."
+    },
+    {
+      "feature": "Achievement Rewards System",
+      "description": "Tiered milestone cards (Bronze, Silver, Gold, Diamond, Ambassador) with progress bars, locked/unlocked states, and claim reward triggers."
+    },
+    {
+      "feature": "Deposit & Approve Module",
+      "description": "BEP-20 token approval flow simulation, deposit tier selection, gas estimation indicator, and transaction confirmation drawer."
+    },
+    {
+      "feature": "Withdraw Module",
+      "description": "Available MERQ balance check, dynamic withdrawal fee calculation (e.g. 5% pool maintenance fee), net payout preview, and signature confirmation."
+    },
+    {
+      "feature": "BscScan Transaction Ledger",
+      "description": "Table displaying off-chain MongoDB ledger transactions with simulated 0x tx hashes linked directly to BscScan testnet/mainnet explorer format."
+    },
+    {
+      "feature": "Admin Panel & Governance Rules",
+      "description": "Configurable rule sets (referral percentage, pool release caps, binary leg balance requirements, deposit packages) and member status override."
+    }
+  ],
+  "media_assets": [
+    {
+      "category": "Hero & Banner Visuals",
+      "url": "https://images.unsplash.com/photo-1625014618427-fbc980b974f5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRhcmslMjBnb2xkZW4lMjBjcnlwdG8lMjAzZCUyMHdlYjMlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc5MTU5Nzc2N3ww&ixlib=rb-4.1.0&q=85",
+      "description": "Dark sphere with metallic copper/gold structure background element for hero DApp header."
+    },
+    {
+      "category": "Abstract Texture Surface",
+      "url": "https://images.unsplash.com/photo-1634549709262-508c47d4c229?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMGRhcmslMjBnb2xkZW4lMjBjcnlwdG8lMjAzZCUyMHdlYjMlMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc5MTU5Nzc2N3ww&ixlib=rb-4.1.0&q=85",
+      "description": "Dark gold metallic flowing abstract background texture."
+    }
+  ],
+  "testing_strategy": {
+    "attribute_name": "data-testid",
+    "convention": "kebab-case, role-based",
+    "mandatory_test_ids": [
+      "connect-wallet-button",
+      "wallet-address-badge",
+      "wallet-sign-button",
+      "merq-balance-display",
+      "fiat-value-display",
+      "referral-link-input",
+      "copy-referral-link-button",
+      "sponsor-tree-tab",
+      "placement-tree-tab",
+      "binary-tree-canvas",
+      "deposit-amount-input",
+      "deposit-approve-button",
+      "deposit-submit-button",
+      "withdraw-amount-input",
+      "withdraw-fee-display",
+      "withdraw-submit-button",
+      "income-filter-select",
+      "transaction-table",
+      "bscscan-link-button",
+      "admin-rule-save-button"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Components are in JavaScript (.jsx / .js files). Do NOT output TypeScript types or .tsx extensions.",
+    "Use Lucide React or @phosphor-icons/react for modern crypto dashboard icons.",
+    "Use Sonner (src/components/ui/sonner.jsx) for all toast notifications (e.g. Wallet Connected, Signature Verified, Transaction Submitted, Referral Link Copied).",
+    "Ensure all interactive elements have data-testid attributes.",
+    "Use pure HTML + Tailwind CSS for custom structural layouts and custom SVG elements for the binary tree visualization.",
+    "All modals, datepickers, selects, tabs, and tables must use customized Shadcn primitives in src/components/ui/."
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "You tend to converge toward generic, on distribution outputs. In frontend design, this creates AI slop. Avoid this: make creative, distinctive frontends that surprise and delight.",
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as heavy full-screen gradients.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "You MUST NOT apply universal transitions like transition: all. Always add transitions for specific interactive elements like button or input, excluding transforms.",
+    "You MUST NOT center align the main app container (.App text-align: center).",
+    "Always use modern button styles like pill-shaped or sharp border buttons with subtle gold glow animations.",
+    "NEVER use AI assistant emoji characters like 🤖🧠💭💡🔮🎯 for icons. Use clean SVG / Lucide icons.",
+    "Every interaction needs micro-animations - hover states, transitions, entrance animations. Static = dead.",
+    "Use 2-3x more spacing than feels typical to allow high data density breathing room.",
+    "Subtle grain textures, selection states, glowing borders, and loading skeletons separate good from extraordinary."
+  ]
+}

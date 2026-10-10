@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #07090E;
+    color: #F8FAFC;
+}
+
+@layer base {
+    :root {
+        --background: 222 47% 4%;
+        --foreground: 210 40% 98%;
+        --card: 222 40% 8%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222 44% 6%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 43 90% 56%;
+        --primary-foreground: 222 47% 6%;
+        --secondary: 217 33% 14%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 217 33% 14%;
+        --muted-foreground: 215 20% 65%;
+        --accent: 160 84% 39%;
+        --accent-foreground: 222 47% 6%;
+        --destructive: 347 77% 60%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 217 33% 17%;
+        --input: 217 33% 17%;
+        --ring: 43 90% 56%;
+        --radius: 0.75rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+/* MerqON design tokens */
+:root {
+    --merq-bg: #07090E;
+    --merq-surface: #0F172A;
+    --merq-gold: #F3BA2F;
+    --merq-gold-hover: #F0B90B;
+    --merq-emerald: #10B981;
+    --merq-cyan: #06B6D4;
+    --merq-rose: #F43F5E;
+}
+
+.font-display { font-family: 'Outfit', sans-serif; }
+.font-mono-merq { font-family: 'JetBrains Mono', monospace; }
+
+/* Ambient background */
+.merq-bg {
+    background-color: #07090E;
+    background-image:
+        radial-gradient(1200px 600px at 85% -5%, rgba(243, 186, 47, 0.08), transparent 60%),
+        radial-gradient(900px 500px at 5% 10%, rgba(16, 185, 129, 0.06), transparent 55%);
+}
+
+.merq-grain::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.glass {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gold-glow {
+    box-shadow: 0 0 0 1px rgba(243, 186, 47, 0.25), 0 8px 40px rgba(243, 186, 47, 0.12);
+}
+
+.card-hover {
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+.card-hover:hover {
+    transform: translateY(-3px);
+    border-color: rgba(243, 186, 47, 0.3);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.gold-text {
+    background: linear-gradient(135deg, #FDE68A 0%, #F3BA2F 50%, #CA8A04 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+::selection {
+    background: rgba(243, 186, 47, 0.3);
+    color: #fff;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0B0E14; }
+::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.5s ease forwards; }
+
+@keyframes pulseGold {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(243, 186, 47, 0.4); }
+    50% { box-shadow: 0 0 0 10px rgba(243, 186, 47, 0); }
+}
+.pulse-gold { animation: pulseGold 2s infinite; }
