@@ -8,7 +8,7 @@ from typing import Optional, List, Any
 
 import jwt
 import requests
-from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -67,6 +67,20 @@ DEFAULT_SETTINGS = {
     "deposit_packages": [100, 500, 1000, 5000],
     "starting_wallet_balance": 10000.0,
     "paused": False,
+    "withdraw_auto_approve_under": 1000.0,
+    "platform_name": "MerqON",
+    "timezone": "UTC",
+    "maintenance_mode": False,
+    "block_confirmations": 12,
+    "emergency": {
+        "pause_withdrawals": False,
+        "pause_deposits": False,
+        "pause_autopool": False,
+        "pause_rewards": False,
+        "disable_registration": False,
+    },
+    "token_contract": "0x0000000000000000000000000000000000000000",
+    "total_supply": 1000000000,
     "admin_addresses": [ADMIN_DEMO_ADDRESS.lower()],
     "reward_tiers": [
         {"key": "first_activity", "title": "First Activity", "metric": "deposit_count", "threshold": 1, "reward": 25, "icon": "sparkles"},
@@ -114,7 +128,12 @@ async def get_settings() -> dict:
     s = await db.settings.find_one({"_id": "global"})
     if not s:
         await db.settings.insert_one(dict(DEFAULT_SETTINGS))
-        s = dict(DEFAULT_SETTINGS)
+        return dict(DEFAULT_SETTINGS)
+    # backfill any missing top-level default keys (schema migration)
+    missing = {k: v for k, v in DEFAULT_SETTINGS.items() if k not in s}
+    if missing:
+        await db.settings.update_one({"_id": "global"}, {"$set": missing})
+        s.update(missing)
     return s
 
 
@@ -315,6 +334,8 @@ async def auth_verify(req: VerifyReq):
     is_new = m is None
     if is_new:
         is_admin = addr.lower() in [a.lower() for a in settings.get("admin_addresses", [])]
+        if settings.get("emergency", {}).get("disable_registration") and not is_admin:
+            raise HTTPException(403, "New registrations are currently disabled")
         sponsor = None
         if req.ref and is_address(req.ref) and req.ref.lower() != addr.lower():
             sp = await db.members.find_one({"_id": req.ref.lower()})
@@ -458,8 +479,8 @@ class DepositReq(BaseModel):
 @api.post("/deposit")
 async def deposit(req: DepositReq, m: dict = Depends(current_member)):
     settings = await get_settings()
-    if settings.get("paused"):
-        raise HTTPException(400, "Protocol is paused")
+    if settings.get("paused") or settings.get("emergency", {}).get("pause_deposits"):
+        raise HTTPException(400, "Deposits are currently paused")
     amt = float(req.amount)
     if amt <= 0:
         raise HTTPException(400, "Invalid amount")
@@ -575,6 +596,8 @@ async def rewards_claim(req: ClaimReq, m: dict = Depends(current_member)):
     tier = next((t for t in settings.get("reward_tiers", []) if t["key"] == req.key), None)
     if not tier:
         raise HTTPException(404, "Reward not found")
+    if settings.get("emergency", {}).get("pause_rewards"):
+        raise HTTPException(400, "Reward claims are currently paused")
     if req.key in m.get("claimed_rewards", []):
         raise HTTPException(400, "Already claimed")
     if metric_value(m, tier["metric"]) < tier["threshold"]:
@@ -609,8 +632,8 @@ async def autopool_status(m: dict = Depends(current_member)):
 @api.post("/autopool/enter")
 async def autopool_enter(m: dict = Depends(current_member)):
     settings = await get_settings()
-    if settings.get("paused"):
-        raise HTTPException(400, "Protocol is paused")
+    if settings.get("paused") or settings.get("emergency", {}).get("pause_autopool"):
+        raise HTTPException(400, "Autopool is currently paused")
     entry = settings["autopool_entry"]
     fresh = await db.members.find_one({"_id": m["_id"]})
     if fresh["available"] + fresh["wallet_balance"] < entry:
@@ -690,8 +713,9 @@ async def withdraw_quote(amount: float, m: dict = Depends(current_member)):
 @api.post("/withdraw/request")
 async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
     settings = await get_settings()
-    if settings.get("paused"):
-        raise HTTPException(400, "Protocol is paused")
+    emg = settings.get("emergency", {})
+    if settings.get("paused") or emg.get("pause_withdrawals"):
+        raise HTTPException(400, "Withdrawals are currently paused")
     amt = float(req.amount)
     if m["status"] != "active":
         raise HTTPException(400, "Member must be active (make a deposit first)")
@@ -714,13 +738,33 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
     fee = amt * settings["withdraw_fee_pct"] / 100.0
     protocol = amt * settings["protocol_fee_pct"] / 100.0
     receive = amt - fee - protocol
+    # Hold the funds (deduct available immediately)
     await db.members.update_one({"_id": m["_id"]}, {
-        "$inc": {"available": -amt, "wallet_balance": receive},
+        "$inc": {"available": -amt},
         "$set": {"last_withdraw_at": iso(now_utc()), "withdrawn_today": used + amt, "withdrawn_today_date": today},
     })
-    await record_tx(m["_id"], "withdraw", -amt, meta={"fee": round(fee, 4), "protocol_fee": round(protocol, 4),
-                                                      "received": round(receive, 4)})
-    return {"ok": True, "received": round(receive, 4), "fee": round(fee, 4), "protocol_fee": round(protocol, 4)}
+    auto = amt <= float(settings.get("withdraw_auto_approve_under", 1000))
+    wid = "WD-" + secrets.token_hex(5).upper()
+    status = "completed" if auto else "pending"
+    txh = fake_tx_hash()
+    wdoc = {
+        "_id": wid, "address": m["_id"], "amount": round(amt, 4), "fee": round(fee, 4),
+        "protocol_fee": round(protocol, 4), "net": round(receive, 4), "status": status,
+        "created_at": iso(now_utc()), "tx_hash": txh if auto else None, "approvals": [], "reason": None,
+    }
+    await db.withdrawals.insert_one(wdoc)
+    tx = {
+        "_id": secrets.token_hex(12), "address": m["_id"], "type": "withdraw",
+        "amount": round(-amt, 6), "status": "confirmed" if auto else "pending",
+        "tx_hash": txh, "created_at": iso(now_utc()),
+        "meta": {"request_id": wid, "fee": round(fee, 4), "protocol_fee": round(protocol, 4), "received": round(receive, 4)},
+    }
+    await db.transactions.insert_one(tx)
+    if auto:
+        await db.members.update_one({"_id": m["_id"]}, {"$inc": {"wallet_balance": receive}})
+    return {"ok": True, "status": status, "request_id": wid, "received": round(receive, 4),
+            "fee": round(fee, 4), "protocol_fee": round(protocol, 4),
+            "message": "Withdrawal completed" if auto else "Withdrawal requested — pending admin approval"}
 
 
 # ----------------------------- price -----------------------------
@@ -747,67 +791,6 @@ async def price():
             "source": "admin-configured", "bnb_source": "coingecko"}
 
 
-# ----------------------------- admin -----------------------------
-@api.get("/admin/settings")
-async def admin_get_settings(m: dict = Depends(admin_member)):
-    s = await get_settings()
-    s.pop("_id", None)
-    return s
-
-
-@api.put("/admin/settings")
-async def admin_update_settings(payload: dict, m: dict = Depends(admin_member)):
-    payload.pop("_id", None)
-    await db.settings.update_one({"_id": "global"}, {"$set": payload}, upsert=True)
-    s = await get_settings()
-    s.pop("_id", None)
-    return s
-
-
-@api.get("/admin/members")
-async def admin_members(m: dict = Depends(admin_member)):
-    members = await db.members.find({}).sort("joined_at", -1).to_list(1000)
-    return [{"address": x["address"], "short": short(x["address"]), "status": x["status"],
-             "rank": x["rank"], "sponsor": short(x["sponsor"]) if x.get("sponsor") else None,
-             "joined_at": x["joined_at"], "principal": round(x["principal"], 2),
-             "available": round(x["available"], 2), "direct_count": x["direct_count"],
-             "team_count": x["team_count"], "team_volume": round(x["team_volume"], 2),
-             "is_admin": bool(x.get("is_admin"))} for x in members]
-
-
-class StatusReq(BaseModel):
-    address: str
-    status: str
-
-
-@api.post("/admin/member/status")
-async def admin_set_status(req: StatusReq, m: dict = Depends(admin_member)):
-    if req.status not in ("active", "inactive", "suspended"):
-        raise HTTPException(400, "Invalid status")
-    r = await db.members.update_one({"_id": req.address.lower()}, {"$set": {"status": req.status}})
-    if r.matched_count == 0:
-        raise HTTPException(404, "Member not found")
-    return {"ok": True}
-
-
-@api.get("/admin/analytics")
-async def admin_analytics(m: dict = Depends(admin_member)):
-    total_members = await db.members.count_documents({})
-    active = await db.members.count_documents({"status": "active"})
-    members = await db.members.find({}).to_list(5000)
-    tvl = sum(x["principal"] for x in members)
-    total_paid = sum(member_total_income(x) for x in members)
-    txs = await db.transactions.count_documents({})
-    # income distribution
-    dist = {"referral": 0.0, "profit_growth": 0.0, "pg_commission": 0.0, "reward": 0.0, "autopool": 0.0}
-    for x in members:
-        for k in dist:
-            dist[k] += x["income"].get(k, 0.0)
-    return {"total_members": total_members, "active_members": active, "tvl": round(tvl, 2),
-            "total_income_paid": round(total_paid, 2), "total_transactions": txs,
-            "income_distribution": {k: round(v, 2) for k, v in dist.items()}}
-
-
 @api.get("/")
 async def root():
     return {"name": "MerqON API", "status": "ok"}
@@ -821,6 +804,8 @@ async def startup():
     await db.transactions.create_index("address")
     await db.positions.create_index("owner")
     await db.autopool.create_index("status")
+    await db.withdrawals.create_index("status")
+    await db.audit_logs.create_index("created_at")
     settings = await get_settings()
     # seed admin root member
     admin = await db.members.find_one({"_id": ADMIN_DEMO_ADDRESS.lower()})
@@ -829,6 +814,50 @@ async def startup():
         doc["status"] = "active"
         await db.members.insert_one(doc)
         logger.info(f"Seeded admin root member {ADMIN_DEMO_ADDRESS}")
+    # seed super admin RBAC user
+    su = await db.admin_users.find_one({"_id": ADMIN_DEMO_ADDRESS.lower()})
+    if not su:
+        await db.admin_users.insert_one({
+            "_id": ADMIN_DEMO_ADDRESS.lower(),
+            "address": ADMIN_DEMO_ADDRESS,
+            "email": "admin@merqon.io",
+            "name": "Super Admin",
+            "role": "SUPER_ADMIN",
+            "status": "active",
+            "twofa_enabled": False,
+            "created_at": iso(now_utc()),
+            "last_login": None,
+        })
+        logger.info("Seeded SUPER_ADMIN admin user admin@merqon.io")
+    # seed rule versions V1 from current settings
+    if await db.rule_versions.count_documents({}) == 0:
+        base = [
+            ("referral", {"direct_referral_pct": settings["referral_pct"]}),
+            ("growth", {"daily_pct": settings["profit_growth_daily_pct"], "term_days": settings["profit_growth_term_days"]}),
+            ("commission", {"pct": settings["pg_commission_pct"], "min_directs": settings["pg_commission_min_directs"]}),
+            ("rewards", {"tiers": settings["reward_tiers"]}),
+            ("autopool", {"entry": settings["autopool_entry"], "capacity": settings["autopool_capacity"], "reward": settings["autopool_reward"]}),
+            ("withdrawal", {"min": settings["min_withdraw"], "max": settings["daily_withdraw_limit"], "fee_pct": settings["withdraw_fee_pct"], "cooldown_hours": settings["withdraw_cooldown_hours"]}),
+        ]
+        for rtype, params in base:
+            await db.rule_versions.insert_one({
+                "_id": secrets.token_hex(8), "type": rtype, "version": 1, "params": params,
+                "effective_from": iso(now_utc()), "created_by": "system", "created_at": iso(now_utc()), "active": True,
+            })
+        logger.info("Seeded rule versions V1")
+    # seed sample support tickets
+    if await db.tickets.count_documents({}) == 0:
+        samples = [
+            {"category": "Withdrawal", "priority": "high", "subject": "Withdrawal pending too long", "status": "open"},
+            {"category": "Referral", "priority": "medium", "subject": "Referral income not credited", "status": "in_progress"},
+            {"category": "Wallet", "priority": "low", "subject": "Cannot connect Trust Wallet", "status": "resolved"},
+        ]
+        for i, s in enumerate(samples):
+            await db.tickets.insert_one({
+                "_id": "TKT-" + secrets.token_hex(4).upper(), "address": ADMIN_DEMO_ADDRESS.lower(),
+                "assigned": None, "created_at": iso(now_utc()), "updated_at": iso(now_utc()), **s,
+            })
+        logger.info("Seeded sample support tickets")
 
 
 @app.on_event("shutdown")
@@ -837,6 +866,20 @@ async def shutdown():
 
 
 app.include_router(api)
+
+# Admin Panel router (RBAC, audit, full modules)
+import types as _types
+from admin_panel import build_admin_router
+_admin_deps = _types.SimpleNamespace(
+    db=db, get_settings=get_settings, now_utc=now_utc, iso=iso, parse_iso=parse_iso,
+    short=short, record_tx=record_tx, fake_tx_hash=fake_tx_hash,
+    member_total_income=member_total_income, compute_rank=compute_rank,
+    build_sponsor_tree=build_sponsor_tree, build_placement_tree=build_placement_tree,
+    current_member=current_member, accrued_for_position=accrued_for_position,
+    BSCSCAN_BASE=BSCSCAN_BASE, ADMIN_DEMO_ADDRESS=ADMIN_DEMO_ADDRESS,
+)
+app.include_router(build_admin_router(_admin_deps))
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

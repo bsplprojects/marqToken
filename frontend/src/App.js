@@ -13,7 +13,7 @@ import Transactions from "@/pages/Transactions";
 import WalletPage from "@/pages/WalletPage";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
-import Admin from "@/pages/Admin";
+import AdminApp from "@/admin/AdminApp";
 
 function Protected({ children, adminOnly }) {
   const { member, loading } = useAuth();
@@ -58,7 +58,7 @@ function App() {
             <Route path="/wallet" element={<Protected><WalletPage /></Protected>} />
             <Route path="/profile" element={<Protected><Profile /></Protected>} />
             <Route path="/settings" element={<Protected><Settings /></Protected>} />
-            <Route path="/admin" element={<Protected adminOnly><Admin /></Protected>} />
+            <Route path="/admin/*" element={<AdminApp />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

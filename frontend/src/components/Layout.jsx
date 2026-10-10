@@ -27,9 +27,7 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  const nav = member?.is_admin
-    ? [...NAV, { to: "/admin", label: "Admin Panel", icon: ShieldCheck, tid: "nav-admin" }]
-    : NAV;
+  const nav = NAV;
 
   const copyAddr = () => {
     navigator.clipboard.writeText(member?.address || "");
