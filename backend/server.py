@@ -201,11 +201,23 @@ async def propagate_volume(member_addr: str, amount: float):
     while parent_addr:
         leg = child.get("placement_leg")
         field = "left_volume" if leg == "left" else "right_volume"
-        cfield = "left_count" if leg == "left" else "right_count"
         await db.members.update_one(
             {"_id": parent_addr},
-            {"$inc": {field: amount, cfield: 0, "team_volume": amount}},
+            {"$inc": {field: amount, "team_volume": amount}},
         )
+        child = await db.members.find_one({"_id": parent_addr})
+        parent_addr = child.get("placement_parent")
+
+
+async def propagate_placement_counts(member_addr: str):
+    """Walk up placement tree adding 1 to each ancestor's leg member count."""
+    m = await db.members.find_one({"_id": member_addr})
+    child = m
+    parent_addr = m.get("placement_parent")
+    while parent_addr:
+        leg = child.get("placement_leg")
+        cfield = "left_count" if leg == "left" else "right_count"
+        await db.members.update_one({"_id": parent_addr}, {"$inc": {cfield: 1}})
         child = await db.members.find_one({"_id": parent_addr})
         parent_addr = child.get("placement_parent")
 
@@ -322,6 +334,7 @@ async def auth_verify(req: VerifyReq):
         # update sponsor chain counts
         if sponsor:
             await db.members.update_one({"_id": sponsor}, {"$inc": {"direct_count": 1}})
+            await propagate_placement_counts(m["_id"])
             up = sponsor
             while up:
                 await db.members.update_one({"_id": up}, {"$inc": {"team_count": 1}})

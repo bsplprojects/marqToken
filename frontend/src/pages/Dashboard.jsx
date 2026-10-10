@@ -75,6 +75,9 @@ export default function Dashboard() {
             <div className="font-mono-merq text-slate-400 mt-2" data-testid="fiat-value-display">
               ≈ {fmtUSD(data.fiat_value)} <span className="text-slate-600 text-xs">· @ ${data.merq_price_usd}/MERQ</span>
             </div>
+            <div className="font-mono-merq text-xs text-slate-500 mt-1">
+              Wallet (available to deposit): <span className="text-amber-300">{fmt(data.wallet_balance)} MERQ</span>
+            </div>
 
             <div className="grid grid-cols-3 gap-4 mt-8">
               <div className="rounded-xl border border-white/8 bg-white/5 p-4">

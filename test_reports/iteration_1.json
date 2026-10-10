@@ -1,0 +1,33 @@
+{
+  "summary": "Full e2e testing of MerqON DApp (BNB-chain simulated membership/token platform). Backend: 30 pytest tests across auth (nonce/verify, reused-nonce rejection, invalid signature, fresh-wallet auto-register), member dashboard/profile, deposit (referral 5% payout verified), growth positions, rewards (claim/double-claim/locked), autopool, withdraw (quote, min, active-required, success, cooldown), network tree + downline counts, income, transactions (bscscan_url), price (merq_usd + bnb_usd), admin (settings get/put persist, members, analytics, status change, non-admin 403). All 30 tests PASSED. Frontend: Landing -> Demo Member -> Sign In -> /dashboard; all sidebar nav tabs load (Network, Income, Autopool, Rewards, Transactions, Wallet, Profile, Settings) without crashes; deposit flow (approve + 500) succeeded via POST /api/deposit 200 and dashboard showed principal 500 + Active status; First Activity reward claim succeeded; autopool enter succeeded. Admin flow: Demo Admin -> Sign In -> Admin Panel nav visible, protocol rules editable, admin-rule-save-button persisted referral_pct update (6 -> reverted to 5), admin-members-table rendered with 25 members and analytics (TVL 3800, income distribution).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard header", "issues": ["'TOTAL MERQ BALANCE' shows available+principal (0.00 for new members) while the Wallet page shows wallet_balance 10,000. The dashboard hero number being 0 immediately after registration (while 10k 'wallet' exists) is semantically correct but visually confusing to a brand-new user. Consider adding a secondary line showing wallet_balance on the dashboard, or renaming to 'Protocol Balance'."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_merqon_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "(Minor UX) Clarify dashboard 'Total MERQ Balance' labeling vs Wallet page 'Wallet Balance' — new users land on dashboard with 0.00 shown prominently while they actually have 10,000 MERQ in off-protocol wallet.",
+    "(Nice-to-have) /api/admin/members returns only short addresses; a UI action that needs full address (e.g., status-change) would be forced to re-derive — expose full address field as well."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 833 lines in a single file — consider splitting by domain (auth, member, admin, growth, autopool, withdraw) for maintainability.",
+    "CoinGecko call uses blocking `requests` library inside async FastAPI handler — should use httpx.AsyncClient or run_in_executor to avoid blocking event loop under load.",
+    "`binary_place` BFS reads `.find({...}).to_list(10)` with hard-coded limit; children leg detection assumes <=2 per parent, fine, but note top-level `queue.append` + append without visited-set could cycle if data corrupt. Add a depth guard.",
+    "`propagate_volume` increments team_count via `cfield: 0` — the field is set but `$inc` by 0 is a no-op; team_count is instead handled during registration only. This is correct for the model (team_count = sponsor-chain count, left/right_count tracks placement) but misleading — remove the 0 inc.",
+    "Settings endpoint `PUT /api/admin/settings` accepts an arbitrary dict and $set-s it directly without validating keys — a malicious admin could inject arbitrary fields into the global settings doc.",
+    "No rate limiting on /api/auth/nonce — can be spammed; consider throttling.",
+    "JWT_SECRET default in .env is literal 'merqon_dev_secret_change_in_production_...' — flag for production hardening.",
+    "`transactions` return floats using `round(x, 6)` but amounts are not stored as Decimal — fine for simulated ledger but note for real on-chain integration."
+  ],
+  "updated_files": ["/app/backend/tests/test_merqon_api.py"],
+  "success_rate": {"backend": "100% (30/30)", "frontend": "100%"},
+  "test_credentials": "Demo Admin wallet 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (pk 0xac0974...ff80) seeded as admin+root. Random demo-member wallets generated per-session.",
+  "seed_data_creation": "Each run of backend tests creates ~15 fresh wallets (random, prefix implicit by address) + their deposits/txs; left in DB. Admin members list now has 25 members from accumulated test runs.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend pytest file at /app/backend/tests/test_merqon_api.py — set REACT_APP_BACKEND_URL env var before running (`REACT_APP_BACKEND_URL=https://... pytest ...`). All backend endpoints green. Known UI testids used: connect-demo-member-button, connect-demo-admin-button, wallet-sign-button, nav-*, merq-balance-display, deposit-approve-button, deposit-submit-button, claim-reward-<key>, autopool-enter-button, admin-rule-save-button, admin-field-<key>, admin-members-table. Note: `merq-balance-display` shows available+principal (not wallet_balance). Deposit 500 flow works via /api/deposit 200; member becomes 'active'. Admin settings persist (verified referral_pct update)."
+}
