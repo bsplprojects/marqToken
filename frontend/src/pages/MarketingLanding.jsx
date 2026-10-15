@@ -4,7 +4,7 @@ import {
   Hexagon, ArrowRight, Rocket, Brain, LineChart, Wallet, Coins, Cpu, ShieldCheck,
   Activity, Gauge, Code2, PenTool, PieChart, MessageSquare, Search, Briefcase,
   TrendingUp, Target, CheckCircle2, Globe, Network, Zap, ChevronRight, ArrowLeftRight,
-  BarChart3, AlertTriangle,
+  BarChart3,
 } from "lucide-react";
 
 const LOGO = "https://static.prod-images.emergentagent.com/jobs/0d2f38fb-f374-4f65-82fb-6baa71195ee0/images/b4d5a2f8bc3a3e78e56f4a056c410c8f300672e18ba36cf5663509880cb71b6e.jpeg";
@@ -211,10 +211,6 @@ export default function MarketingLanding() {
               <p className="text-xs text-slate-500 mt-2 leading-relaxed">{t.desc}</p>
             </div>
           ))}
-        </div>
-        <div className="rounded-2xl border border-rose-400/20 bg-rose-500/5 p-4 mt-5 flex items-start gap-3">
-          <AlertTriangle className="h-4 w-4 text-rose-400 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-rose-200/80">Trading involves financial risk. Historical performance does not guarantee future results, and losses may occur.</p>
         </div>
       </Section>
 
