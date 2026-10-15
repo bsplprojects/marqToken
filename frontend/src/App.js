@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
+import LoadingSplash from "@/components/LoadingSplash";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import Network from "@/pages/Network";
@@ -19,11 +20,7 @@ import MarketingLanding from "@/pages/MarketingLanding";
 function Protected({ children, adminOnly }) {
   const { member, loading } = useAuth();
   if (loading) {
-    return (
-      <div className="merq-bg min-h-screen flex items-center justify-center">
-        <div className="font-mono-merq text-amber-400 animate-pulse tracking-widest">LOADING MERQON…</div>
-      </div>
-    );
+    return <LoadingSplash />;
   }
   if (!member) return <Navigate to="/app" replace />;
   if (adminOnly && !member.is_admin) return <Navigate to="/dashboard" replace />;

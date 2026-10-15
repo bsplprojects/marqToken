@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import BrandLogo from "@/components/BrandLogo";
 import {
   Hexagon, ArrowRight, Rocket, Brain, LineChart, Wallet, Coins, Cpu, ShieldCheck,
   Activity, Gauge, Code2, PenTool, PieChart, MessageSquare, Search, Briefcase,
   TrendingUp, Target, CheckCircle2, Globe, Network, Zap, ChevronRight, ArrowLeftRight,
-  BarChart3,
+  BarChart3, Menu, X,
 } from "lucide-react";
 
 const LOGO = "https://static.prod-images.emergentagent.com/jobs/0d2f38fb-f374-4f65-82fb-6baa71195ee0/images/b4d5a2f8bc3a3e78e56f4a056c410c8f300672e18ba36cf5663509880cb71b6e.jpeg";
@@ -60,6 +61,7 @@ const NAV = [
 ];
 
 export default function MarketingLanding() {
+  const [menu, setMenu] = useState(false);
   useEffect(() => {
     const obs = new IntersectionObserver((entries) => {
       entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("revealed"); });
@@ -96,12 +98,43 @@ export default function MarketingLanding() {
             ))}
           </nav>
           <Link to="/app" data-testid="nav-launch-app"
-            className="group flex items-center gap-2 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-2.5 text-sm transition-colors">
+            className="group hidden sm:flex items-center gap-2 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-2.5 text-sm transition-colors">
             <Rocket className="h-4 w-4" /> Launch App
             <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>
+          <button data-testid="mobile-menu-toggle" onClick={() => setMenu(true)}
+            className="lg:hidden inline-flex items-center justify-center h-10 w-10 rounded-lg border border-white/10 text-slate-200 ml-1">
+            <Menu className="h-5 w-5" />
+          </button>
         </div>
       </header>
+
+      {/* MOBILE DRAWER */}
+      <div className={`lg:hidden fixed inset-0 z-[60] ${menu ? "" : "pointer-events-none"}`}>
+        <div className={`absolute inset-0 bg-black/70 transition-opacity duration-300 ${menu ? "opacity-100" : "opacity-0"}`} onClick={() => setMenu(false)} />
+        <aside data-testid="mobile-nav-drawer"
+          className={`absolute right-0 top-0 h-full w-72 max-w-[85vw] bg-slate-950 border-l border-white/10 p-6 transition-transform duration-300 ${menu ? "translate-x-0" : "translate-x-full"}`}>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2">
+              <BrandLogo size={36} />
+              <div className="font-display font-black"><span className="text-white">Merq</span><span className="gold-text">ON</span></div>
+            </div>
+            <button data-testid="mobile-menu-close" onClick={() => setMenu(false)} className="text-slate-400 hover:text-white"><X className="h-5 w-5" /></button>
+          </div>
+          <nav className="flex flex-col gap-1">
+            {NAV.map((n) => (
+              <a key={n.label} href={n.href} onClick={() => setMenu(false)}
+                className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-300 hover:text-amber-300 hover:bg-white/5 transition-colors">
+                {n.label} <ChevronRight className="h-4 w-4 text-slate-600" />
+              </a>
+            ))}
+          </nav>
+          <Link to="/app" onClick={() => setMenu(false)} data-testid="mobile-launch-app"
+            className="mt-6 flex items-center justify-center gap-2 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-3 transition-colors">
+            <Rocket className="h-4 w-4" /> Launch App
+          </Link>
+        </aside>
+      </div>
 
       {/* HERO */}
       <section id="top" className="relative">

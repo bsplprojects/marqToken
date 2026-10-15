@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AdminAuthProvider, useAdminAuth } from "./AdminAuth";
 import AdminLayout from "./AdminLayout";
 import AdminLogin from "./AdminLogin";
+import LoadingSplash from "@/components/LoadingSplash";
 import Dashboard from "./pages/Dashboard";
 import Members from "./pages/Members";
 import MemberDetail from "./pages/MemberDetail";
@@ -32,11 +33,7 @@ import SystemSettings from "./pages/SystemSettings";
 function Shell() {
   const { admin, loading } = useAdminAuth();
   if (loading) {
-    return (
-      <div className="merq-bg min-h-screen flex items-center justify-center">
-        <div className="font-mono-merq text-amber-400 animate-pulse tracking-widest">LOADING CONSOLE…</div>
-      </div>
-    );
+    return <LoadingSplash label="LOADING CONSOLE" />;
   }
   if (!admin) return <AdminLogin />;
   return (
