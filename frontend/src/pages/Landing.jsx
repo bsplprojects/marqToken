@@ -7,6 +7,7 @@ import {
   getStoredWallet, clearWallet, hasMetaMask,
 } from "@/lib/wallet";
 import { shortAddr } from "@/lib/format";
+import BrandLogo from "@/components/BrandLogo";
 import {
   Hexagon, Wallet, ShieldCheck, Zap, Network, TrendingUp, Layers,
   CheckCircle2, ArrowRight, Loader2, Fingerprint,
@@ -76,10 +77,7 @@ export default function Landing() {
       {/* nav */}
       <div className="flex items-center justify-between px-6 sm:px-10 py-6">
         <div className="flex items-center gap-3">
-          <div className="relative">
-            <Hexagon className="h-9 w-9 text-amber-400 fill-amber-400/10" strokeWidth={1.5} />
-            <div className="absolute inset-0 flex items-center justify-center font-display font-black text-amber-400 text-xs">M</div>
-          </div>
+          <BrandLogo size={40} />
           <div>
             <div className="font-display text-xl font-extrabold tracking-tight text-white leading-none">MerqON</div>
             <div className="font-mono-merq text-[9px] tracking-[0.25em] text-amber-400/70 uppercase mt-1">MERQ · BEP-20</div>

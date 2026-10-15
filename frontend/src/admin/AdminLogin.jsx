@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useAdminAuth, connectAdminMetaMask, connectAdminDemo, getAdminWallet } from "./AdminAuth";
 import { Btn } from "./ui";
-import { ShieldCheck, Hexagon, Wallet, Fingerprint, Loader2, Lock, ArrowRight } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
+import { ShieldCheck, Wallet, Fingerprint, Loader2, Lock, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminLogin() {
@@ -30,10 +31,7 @@ export default function AdminLogin() {
     <div className="merq-bg merq-grain min-h-screen flex items-center justify-center relative z-10 px-4">
       <div className="w-full max-w-md">
         <div className="flex items-center gap-3 justify-center mb-8">
-          <div className="relative">
-            <Hexagon className="h-10 w-10 text-amber-400 fill-amber-400/10" strokeWidth={1.4} />
-            <ShieldCheck className="h-4 w-4 text-amber-400 absolute inset-0 m-auto" />
-          </div>
+          <BrandLogo size={48} />
           <div>
             <div className="font-display text-2xl font-extrabold tracking-tight text-white leading-none">MerqON <span className="gold-text">Admin</span></div>
             <div className="font-mono-merq text-[9px] tracking-[0.3em] text-amber-400/70 uppercase mt-1">Governance Console</div>

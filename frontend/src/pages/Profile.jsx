@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { fmt, fmtDate, shortAddr } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
+import BrandLogo from "@/components/BrandLogo";
 import { toast } from "sonner";
 import {
   User, Copy, Hexagon, TrendingUp, Loader2, Sprout, BadgeCheck,
@@ -50,10 +51,7 @@ export default function Profile() {
       <div className="grid lg:grid-cols-12 gap-6">
         <div className="lg:col-span-5 glass rounded-2xl border border-white/8 p-6">
           <div className="flex items-center gap-4 mb-6">
-            <span className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/10 relative">
-              <Hexagon className="h-10 w-10 text-amber-400 fill-amber-400/10" strokeWidth={1.3} />
-              <User className="h-5 w-5 text-amber-400 absolute" />
-            </span>
+            <BrandLogo size={56} className="rounded-2xl" />
             <div>
               <div className="font-display text-lg font-bold text-white flex items-center gap-2">
                 {shortAddr(profile?.address)}

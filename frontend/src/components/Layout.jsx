@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { shortAddr } from "@/lib/format";
 import { toast } from "sonner";
+import BrandLogo from "@/components/BrandLogo";
 import {
   LayoutDashboard, Network as NetworkIcon, TrendingUp, Layers, Award,
   ReceiptText, Wallet, User, Settings as SettingsIcon, ShieldCheck,
@@ -37,10 +38,7 @@ export default function Layout({ children }) {
   const SidebarInner = () => (
     <div className="flex h-full flex-col">
       <Link to="/dashboard" className="flex items-center gap-3 px-6 py-6">
-        <div className="relative">
-          <Hexagon className="h-9 w-9 text-amber-400 fill-amber-400/10" strokeWidth={1.5} />
-          <div className="absolute inset-0 flex items-center justify-center font-display font-black text-amber-400 text-xs">M</div>
-        </div>
+        <BrandLogo size={40} />
         <div>
           <div className="font-display text-xl font-extrabold tracking-tight text-white leading-none">MerqON</div>
           <div className="font-mono-merq text-[10px] tracking-[0.25em] text-amber-400/70 uppercase mt-1">Build for everyone</div>

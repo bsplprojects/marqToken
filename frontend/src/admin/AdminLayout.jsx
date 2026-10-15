@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAdminAuth } from "./AdminAuth";
 import { shortAddr } from "@/lib/format";
+import BrandLogo from "@/components/BrandLogo";
 import {
   LayoutDashboard, Users, Network, Trophy, Medal, Landmark, ArrowDownToLine,
   ArrowUpFromLine, TrendingUp, GitMerge, Coins, Gift, Layers, Boxes, Banknote,
@@ -61,10 +62,7 @@ export default function AdminLayout({ children }) {
   const Inner = () => (
     <div className="flex h-full flex-col">
       <Link to="/admin/dashboard" className="flex items-center gap-3 px-5 py-5">
-        <div className="relative">
-          <Hexagon className="h-8 w-8 text-amber-400 fill-amber-400/10" strokeWidth={1.4} />
-          <ShieldCheck className="h-3.5 w-3.5 text-amber-400 absolute inset-0 m-auto" />
-        </div>
+        <BrandLogo size={36} />
         <div>
           <div className="font-display text-lg font-extrabold tracking-tight text-white leading-none">MerqON <span className="text-amber-400">Admin</span></div>
           <div className="font-mono-merq text-[8px] tracking-[0.25em] text-amber-400/60 uppercase mt-1">Governance Console</div>
