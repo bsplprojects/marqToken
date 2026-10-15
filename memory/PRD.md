@@ -53,3 +53,10 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - Token/Treasury/Liquidity/Reconciliation are SIMULATED monitoring (no live BSC in v1).
 - Backend: /app/backend/admin_panel.py (build_admin_router + RBAC + audit). Frontend: /app/frontend/src/admin/*.
 - Testing: 47/47 admin backend tests PASS + full admin frontend e2e PASS (iteration_2.json). Member DApp regression green.
+
+## Marketing Landing Page (2026, from company profile)
+- Premium black + luxury-gold marketing site at "/" built from the MerqON company profile (Build to Connect).
+- Generated brand assets: MerqON logo emblem + gold globe hero (hosted URLs in MarketingLanding.jsx).
+- Sections: Hero (Building a Connected Digital Ecosystem), 4 pillars (AI Solutions, Algorithmic Trading, Digital Utility, Tokenomics), Introducing MerqON AI + 3 core segments + mission, AI Platform (6 capabilities), Algorithmic Trading Infrastructure (5 components + risk note), MERQ Tokenomics, Future Utility Roadmap (4 phases + vision), CTA + footer with disclaimers.
+- Routing change: "/" = MarketingLanding; DApp wallet-connect moved to "/app" (and "/register?ref="); Protected redirects to "/app". "Launch App" CTAs link to /app.
+- File: /app/frontend/src/pages/MarketingLanding.jsx. Static content, no backend dependency.

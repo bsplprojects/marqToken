@@ -14,6 +14,7 @@ import WalletPage from "@/pages/WalletPage";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import AdminApp from "@/admin/AdminApp";
+import MarketingLanding from "@/pages/MarketingLanding";
 
 function Protected({ children, adminOnly }) {
   const { member, loading } = useAuth();
@@ -24,7 +25,7 @@ function Protected({ children, adminOnly }) {
       </div>
     );
   }
-  if (!member) return <Navigate to="/" replace />;
+  if (!member) return <Navigate to="/app" replace />;
   if (adminOnly && !member.is_admin) return <Navigate to="/dashboard" replace />;
   return <Layout>{children}</Layout>;
 }
@@ -47,7 +48,8 @@ function App() {
         />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={<MarketingLanding />} />
+            <Route path="/app" element={<Landing />} />
             <Route path="/register" element={<Landing />} />
             <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
             <Route path="/network" element={<Protected><Network /></Protected>} />
