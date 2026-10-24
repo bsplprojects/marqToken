@@ -741,4 +741,43 @@ def build_admin_router(d):
                     body.control, {"reason": body.reason}, request)
         return {"ok": True}
 
+    # ------------------------- swap config -------------------------
+    @r.get("/swap")
+    async def swap_get(au: dict = Depends(require("token"))):
+        c = await d.get_swap_config()
+        docs = await db.swaps.find({}).sort("created_at", -1).to_list(100)
+        return {"config": c, "recent": [
+            {"tx_hash": x["_id"], "address": x["address"], "direction": x["direction"], "amount_in": x["amount_in"],
+             "amount_out_est": x["amount_out_est"], "fee_amount": x["fee_amount"], "status": x["status"],
+             "created_at": x["created_at"], "bscscan_url": f"{d.BSCSCAN_BASE}{x['_id']}"} for x in docs]}
+
+    @r.put("/swap")
+    async def swap_update(payload: dict, request: Request, au: dict = Depends(require("token", write=True))):
+        from eth_utils import is_address, to_checksum_address
+        cur = await d.get_swap_config()
+        upd = {}
+        for k in ("merq_token_address", "usdt_token_address", "router_address", "factory_address", "fee_wallet"):
+            if k in payload:
+                v = (payload[k] or "").strip()
+                if v and not is_address(v):
+                    raise HTTPException(400, f"{k.replace('_', ' ')} is not a valid wallet/contract address")
+                upd[k] = to_checksum_address(v) if v else ""
+        for k, lo, hi in (("fee_pct", 0, 10), ("default_slippage_pct", 0.1, 50)):
+            if k in payload:
+                try:
+                    v = float(payload[k])
+                except (TypeError, ValueError):
+                    raise HTTPException(400, f"{k} must be a number")
+                if not lo <= v <= hi:
+                    raise HTTPException(400, f"{k} must be between {lo} and {hi}")
+                upd[k] = v
+        if "enabled" in payload:
+            upd["enabled"] = bool(payload["enabled"])
+        if "rpc_url" in payload and str(payload["rpc_url"]).startswith("https://"):
+            upd["rpc_url"] = payload["rpc_url"]
+        new = {**cur, **upd}
+        await db.settings.update_one({"_id": "global"}, {"$set": {"swap": new}})
+        await audit(au, "update_swap_config", "token", None, upd, request)
+        return {"ok": True, "config": new}
+
     return r

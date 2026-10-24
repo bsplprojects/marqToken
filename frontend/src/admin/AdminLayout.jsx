@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Network, Trophy, Medal, Landmark, ArrowDownToLine,
   ArrowUpFromLine, TrendingUp, GitMerge, Coins, Gift, Layers, Boxes, Banknote,
   Droplets, SlidersHorizontal, FileBarChart, Scale, Bell, Headphones, UserCog,
-  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X,
+  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, ArrowLeftRight,
 } from "lucide-react";
 
 const NAV = [
@@ -36,6 +36,7 @@ const NAV = [
   ]},
   { group: "Blockchain", items: [
     { to: "token", label: "Token & Chain", icon: Coins, mod: "token" },
+    { to: "swap", label: "Swap Settings", icon: ArrowLeftRight, mod: "token" },
     { to: "treasury", label: "Treasury", icon: Banknote, mod: "treasury" },
     { to: "liquidity", label: "Liquidity", icon: Droplets, mod: "liquidity" },
   ]},

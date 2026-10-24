@@ -80,6 +80,18 @@ DEFAULT_SETTINGS = {
         "disable_registration": False,
     },
     "token_contract": "0x0000000000000000000000000000000000000000",
+    "swap": {
+        "enabled": True,
+        "merq_token_address": "",
+        "usdt_token_address": "0x55d398326f99059fF775485246999027B3197955",
+        "router_address": "0x10ED43C718714eb63d5aA57B78B54704E256024E",
+        "factory_address": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
+        "fee_pct": 0.1,
+        "fee_wallet": "0xc1aCA21ABDfdBF0730e73B56fe949cD2703e63ad",
+        "default_slippage_pct": 1.0,
+        "chain_id": 56,
+        "rpc_url": "https://bsc-dataseed.binance.org",
+    },
     "total_supply": 1000000000,
     "admin_addresses": [ADMIN_DEMO_ADDRESS.lower()],
     "reward_tiers": [
@@ -838,6 +850,75 @@ async def market_klines(interval: str = "1m", limit: int = 120):
                          "c": float(k[4]), "v": float(k[5])} for k in raw]}
 
 
+async def get_swap_config() -> dict:
+    s = await get_settings()
+    return {**DEFAULT_SETTINGS["swap"], **(s.get("swap") or {})}
+
+
+class SwapRecordReq(BaseModel):
+    tx_hash: str
+    direction: str
+    amount_in: float
+    amount_out_est: float
+    fee_amount: float = 0.0
+    fee_tx_hash: Optional[str] = None
+
+
+def _rpc_receipt_status(rpc_url: str, tx_hash: str) -> str:
+    try:
+        r = requests.post(rpc_url, json={"jsonrpc": "2.0", "id": 1, "method": "eth_getTransactionReceipt",
+                                         "params": [tx_hash]}, timeout=6).json()
+        res = r.get("result")
+        if not res:
+            return "pending"
+        return "confirmed" if res.get("status") == "0x1" else "failed"
+    except Exception:
+        return "pending"
+
+
+@api.get("/swap/config")
+async def swap_config():
+    c = await get_swap_config()
+    return {**c, "live": bool(c["enabled"] and c["merq_token_address"])}
+
+
+@api.post("/swap/record")
+async def swap_record(req: SwapRecordReq, m: dict = Depends(current_member)):
+    import re, asyncio
+    if req.direction not in ("USDT_TO_MERQ", "MERQ_TO_USDT"):
+        raise HTTPException(400, "Invalid direction")
+    if not re.fullmatch(r"0x[0-9a-fA-F]{64}", req.tx_hash):
+        raise HTTPException(400, "Invalid transaction hash")
+    if await db.swaps.find_one({"_id": req.tx_hash.lower()}):
+        raise HTTPException(409, "Swap already recorded")
+    c = await get_swap_config()
+    status = await asyncio.to_thread(_rpc_receipt_status, c["rpc_url"], req.tx_hash)
+    doc = {"_id": req.tx_hash.lower(), "address": m["_id"], "direction": req.direction,
+           "amount_in": req.amount_in, "amount_out_est": req.amount_out_est, "fee_amount": req.fee_amount,
+           "fee_pct": c["fee_pct"], "fee_tx_hash": req.fee_tx_hash, "status": status,
+           "created_at": iso(now_utc())}
+    await db.swaps.insert_one(doc)
+    return {"ok": True, "status": status}
+
+
+@api.get("/swap/history")
+async def swap_history(m: dict = Depends(current_member)):
+    import asyncio
+    c = await get_swap_config()
+    docs = await db.swaps.find({"address": m["_id"]}).sort("created_at", -1).to_list(50)
+    out = []
+    for x in docs:
+        if x["status"] == "pending":
+            x["status"] = await asyncio.to_thread(_rpc_receipt_status, c["rpc_url"], x["_id"])
+            if x["status"] != "pending":
+                await db.swaps.update_one({"_id": x["_id"]}, {"$set": {"status": x["status"]}})
+        out.append({"tx_hash": x["_id"], "direction": x["direction"], "amount_in": x["amount_in"],
+                    "amount_out_est": x["amount_out_est"], "fee_amount": x["fee_amount"], "status": x["status"],
+                    "created_at": x["created_at"], "bscscan_url": f"{BSCSCAN_BASE}{x['_id']}"})
+    return out
+
+
+
 @api.get("/market/volume")
 async def market_volume():
     import json as _json
@@ -946,6 +1027,7 @@ _admin_deps = _types.SimpleNamespace(
     build_sponsor_tree=build_sponsor_tree, build_placement_tree=build_placement_tree,
     current_member=current_member, accrued_for_position=accrued_for_position,
     BSCSCAN_BASE=BSCSCAN_BASE, ADMIN_DEMO_ADDRESS=ADMIN_DEMO_ADDRESS,
+    get_swap_config=get_swap_config,
 )
 app.include_router(build_admin_router(_admin_deps))
 

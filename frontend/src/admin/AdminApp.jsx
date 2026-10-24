@@ -29,6 +29,7 @@ import Audit from "./pages/Audit";
 import Health from "./pages/Health";
 import Emergency from "./pages/Emergency";
 import SystemSettings from "./pages/SystemSettings";
+import SwapSettings from "./pages/SwapSettings";
 
 function Shell() {
   const { admin, loading } = useAdminAuth();
@@ -66,6 +67,7 @@ function Shell() {
         <Route path="health" element={<Health />} />
         <Route path="emergency" element={<Emergency />} />
         <Route path="settings" element={<SystemSettings />} />
+        <Route path="swap" element={<SwapSettings />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </AdminLayout>

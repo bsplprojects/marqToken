@@ -7,7 +7,7 @@ import BrandLogo from "@/components/BrandLogo";
 import {
   LayoutDashboard, Network as NetworkIcon, TrendingUp, Layers, Award,
   ReceiptText, Wallet, User, Settings as SettingsIcon, ShieldCheck,
-  LogOut, Copy, Menu, X, Hexagon,
+  LogOut, Copy, Menu, X, Hexagon, ArrowLeftRight,
 } from "lucide-react";
 
 const NAV = [
@@ -18,6 +18,7 @@ const NAV = [
   { to: "/rewards", label: "Rewards", icon: Award, tid: "nav-rewards" },
   { to: "/transactions", label: "Transactions", icon: ReceiptText, tid: "nav-transactions" },
   { to: "/wallet", label: "Wallet", icon: Wallet, tid: "nav-wallet" },
+  { to: "/swap", label: "Swap", icon: ArrowLeftRight, tid: "nav-swap" },
   { to: "/profile", label: "My Profile", icon: User, tid: "nav-profile" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, tid: "nav-settings" },
 ];
