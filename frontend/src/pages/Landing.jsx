@@ -125,7 +125,7 @@ export default function Landing() {
         {/* right - connect card */}
         <div className="fade-up lg:pl-8">
           <div className="glass gold-glow rounded-3xl p-8 border border-amber-400/15 max-w-md mx-auto w-full">
-            {ref && step === "connect" && (
+            {ref && step === "connect" && !isRegister && (
               <div className="mb-6 rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-3 flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-cyan-400 flex-shrink-0" />
                 <span className="font-mono-merq text-xs text-cyan-300">Referred by {shortAddr(ref)}</span>
@@ -136,12 +136,15 @@ export default function Landing() {
               <>
                 <h2 className="font-display text-2xl font-bold text-white">{isRegister ? "Create Account" : "Connect Wallet"}</h2>
                 <p className="text-slate-500 text-sm mt-1 mb-6">
-                  {isRegister ? "Connect your wallet to join with your sponsor." : "Log in, or sign up with a sponsor if you're new."}
+                  {isRegister ? "Step 1: enter your sponsor. Step 2: connect your own wallet to sign up." : "Log in, or sign up with a sponsor if you're new."}
                 </p>
 
+                {isRegister && (
+                  <SponsorField value={sponsorInput} onChange={setSponsorInput} onValid={setSponsor} />
+                )}
                 <button
                   data-testid="connect-wallet-button"
-                  disabled={busy}
+                  disabled={busy || (isRegister && !sponsor)}
                   onClick={() => doConnect("metamask")}
                   className="w-full flex items-center justify-between rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-4 transition-colors disabled:opacity-60"
                 >
