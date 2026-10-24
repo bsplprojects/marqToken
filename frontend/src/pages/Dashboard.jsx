@@ -12,7 +12,7 @@ import { TechPassCard } from "@/components/techpass/TechPassCard";
 import { PortsCard } from "@/components/ports/PortsCard";
 import { toast } from "sonner";
 import {
-  TrendingUp, Users, Network, ArrowDownToLine, ArrowUpFromLine, Share2,
+  TrendingUp, Users, Network, Share2,
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -83,36 +83,7 @@ export default function Dashboard() {
             </div>
             <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-600 mt-1">Live from connected wallet {shortAddr(member?.address)}</div>
 
-            <div className="grid grid-cols-3 gap-4 mt-8">
-              <div className="rounded-xl border border-white/8 bg-white/5 p-4">
-                <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">Available</div>
-                <div className="font-mono-merq text-lg font-bold text-white mt-1">{fmt(data.available)}</div>
-              </div>
-              <div className="rounded-xl border border-white/8 bg-white/5 p-4">
-                <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">Staked Principal</div>
-                <div className="font-mono-merq text-lg font-bold text-white mt-1">{fmt(data.principal)}</div>
-              </div>
-              <div className="rounded-xl border border-emerald-400/15 bg-emerald-400/5 p-4">
-                <div className="font-mono-merq text-[10px] uppercase tracking-widest text-emerald-400/70">Pending Growth</div>
-                <div className="font-mono-merq text-lg font-bold text-emerald-300 mt-1">{fmt(data.pending_growth, 4)}</div>
-              </div>
-            </div>
-
             <div className="flex flex-wrap gap-3 mt-8">
-              <button
-                data-testid="dashboard-deposit-button"
-                onClick={() => navigate("/wallet?tab=deposit")}
-                className="flex items-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-3 transition-colors"
-              >
-                <ArrowDownToLine className="h-4 w-4" /> Deposit
-              </button>
-              <button
-                data-testid="dashboard-withdraw-button"
-                onClick={() => navigate("/wallet?tab=withdraw")}
-                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:border-amber-400/30 text-white font-medium px-5 py-3 transition-colors"
-              >
-                <ArrowUpFromLine className="h-4 w-4" /> Withdraw
-              </button>
               <button
                 data-testid="dashboard-refer-button"
                 onClick={copyRef}
