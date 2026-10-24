@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { fmt } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
+import { WithdrawHistory } from "@/components/WithdrawHistory";
 import { toast } from "sonner";
 import {
   ArrowUpFromLine, CheckCircle2, Loader2, ShieldCheck,
@@ -36,9 +37,10 @@ export default function Withdraw() {
     setBusy(true);
     try {
       const res = await api.post("/withdraw/request", { amount: Number(wAmount) });
-      toast.success(`Withdrawal confirmed · You receive ${res.data.received} MERQ`);
+      toast[res.data.status === "sent" ? "success" : "info"](res.data.message);
       setWAmount(""); setQuote(null);
       qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["withdraw-history"] });
     } catch (e) {
       toast.error(e?.response?.data?.detail || "Withdrawal failed");
     } finally {
@@ -98,13 +100,14 @@ export default function Withdraw() {
               <span className="font-display font-semibold">Security Checks</span>
             </div>
             <ul className="space-y-2 text-sm text-slate-400">
-              {["Member active status", "Amount & minimum validation", "Daily limit & cooldown", "Sufficient balance", "Contract liquidity"].map((c) => (
+              {["Active Merq TechPass", "Amount & minimum validation", "Daily limit & cooldown", "Sufficient available balance", "Large amounts reviewed by admin", "Paid in real MERQ on BNB Smart Chain"].map((c) => (
                 <li key={c} className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400/70" /> {c}</li>
               ))}
             </ul>
           </div>
         </div>
       </div>
+      <div className="mt-6"><WithdrawHistory /></div>
     </div>
   );
 }

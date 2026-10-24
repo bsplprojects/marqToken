@@ -1,4 +1,5 @@
 """MerqON Admin Panel — RBAC-gated comprehensive admin API (separate shell)."""
+import asyncio
 import io
 import csv
 import time
@@ -252,10 +253,30 @@ def build_admin_router(d):
         if status and status != "all":
             q["status"] = status
         docs = await db.withdrawals.find(q).sort("created_at", -1).to_list(1000)
+        docs = [await d.refresh_sent(d, w) for w in docs]
         return [{"id": w["_id"], "address": d.short(w["address"]), "full": w["address"],
                  "amount": w["amount"], "fee": w["fee"], "protocol_fee": w["protocol_fee"],
                  "net": w["net"], "status": w["status"], "created_at": w["created_at"],
-                 "tx_hash": w.get("tx_hash"), "reason": w.get("reason")} for w in docs]
+                 "tx_hash": w.get("tx_hash"), "reason": w.get("reason"),
+                 "bscscan_url": f"{d.BSCSCAN_BASE}{w['tx_hash']}" if w.get("tx_hash") else None} for w in docs]
+
+    @r.get("/withdrawals/treasury")
+    async def withdrawals_treasury(au: dict = Depends(require("withdrawals"))):
+        s = await d.get_settings()
+        st = await asyncio.to_thread(d.treasury_status, await d.get_swap_config())
+        return {**st, "auto_approve_under": float(s.get("withdraw_auto_approve_under", 1000))}
+
+    @r.put("/withdrawals/auto-approve")
+    async def withdrawals_auto_approve(payload: dict, request: Request, au: dict = Depends(require("withdrawals", write=True))):
+        try:
+            v = float(payload.get("auto_approve_under"))
+        except (TypeError, ValueError):
+            raise HTTPException(400, "Amount must be a number")
+        if v < 0:
+            raise HTTPException(400, "Amount cannot be negative")
+        await db.settings.update_one({"_id": "global"}, {"$set": {"withdraw_auto_approve_under": v}})
+        await audit(au, "update_withdraw_auto_approve", "withdrawals", None, {"auto_approve_under": v}, request)
+        return {"ok": True, "auto_approve_under": v}
 
     class WdAction(BaseModel):
         action: str
@@ -268,17 +289,18 @@ def build_admin_router(d):
         if not w:
             raise HTTPException(404, "Request not found")
         act = body.action
-        if act == "approve":
-            if w["status"] not in ("pending", "under_review"):
-                raise HTTPException(400, "Only pending/under-review requests can be approved")
-            txh = d.fake_tx_hash()
-            await db.withdrawals.update_one({"_id": wid}, {"$set": {"status": "completed", "tx_hash": txh}})
-            await db.members.update_one({"_id": w["address"]}, {"$inc": {"wallet_balance": w["net"]}})
-            await db.transactions.update_one({"meta.request_id": wid},
-                {"$set": {"status": "confirmed", "tx_hash": txh}})
+        if act in ("approve", "retry"):
+            ok_from = ("pending", "under_review") if act == "approve" else ("payout_failed",)
+            if w["status"] not in ok_from:
+                raise HTTPException(400, "This request can't be " + ("approved" if act == "approve" else "retried") + " now")
+            if act == "approve":
+                await db.withdrawals.update_one({"_id": wid}, {"$set": {"status": "approved", "approved_by": au["_id"]}})
+            res = await d.process_payout(d, wid)
+            await audit(au, f"withdrawal_{act}", "withdrawals", wid, {"amount": w["amount"], "result": res["status"]}, request)
+            return {"ok": True, "status": res["status"], "reason": res.get("reason"), "tx_hash": res.get("tx_hash")}
         elif act == "reject":
-            if w["status"] in ("completed",):
-                raise HTTPException(400, "Cannot reject a completed withdrawal")
+            if w["status"] in ("completed", "sent", "processing"):
+                raise HTTPException(400, "Cannot reject a withdrawal that was already sent")
             await db.withdrawals.update_one({"_id": wid}, {"$set": {"status": "rejected", "reason": body.reason}})
             await db.members.update_one({"_id": w["address"]}, {"$inc": {"available": w["amount"]}})
             await db.transactions.update_one({"meta.request_id": wid}, {"$set": {"status": "rejected"}})

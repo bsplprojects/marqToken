@@ -60,7 +60,8 @@ def build_ports(d):
         swap, settings = await d.get_swap_config(), await d.get_settings()
         price, source, dec = await d.live_price(swap, settings)
         return {"merq_price": price, "price_source": source, "decimals": dec,
-                "token_address": swap.get("merq_token_address"), "rpc_url": swap["rpc_url"]}
+                "token_address": swap.get("merq_token_address"), "rpc_url": swap["rpc_url"],
+                "usdt_token_address": swap.get("usdt_token_address")}
 
     @r.get("/status")
     async def status(m: dict = Depends(d.current_member)):

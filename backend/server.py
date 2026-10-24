@@ -763,8 +763,10 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
     if settings.get("paused") or emg.get("pause_withdrawals"):
         raise HTTPException(400, "Withdrawals are currently paused")
     amt = float(req.amount)
-    if m["status"] != "active":
-        raise HTTPException(400, "Member must be active (make a deposit first)")
+    if m["status"] != "active" and not await db.techpass.find_one({"address": m["_id"], "status": "confirmed"}):
+        raise HTTPException(400, "An active Merq TechPass is required to withdraw")
+    if not (await get_swap_config()).get("merq_token_address"):
+        raise HTTPException(400, "MERQ token is not live yet")
     if amt < settings["min_withdraw"]:
         raise HTTPException(400, f"Minimum withdrawal is {settings['min_withdraw']} MERQ")
     if amt > m["available"]:
@@ -791,26 +793,39 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
     })
     auto = amt <= float(settings.get("withdraw_auto_approve_under", 1000))
     wid = "WD-" + secrets.token_hex(5).upper()
-    status = "completed" if auto else "pending"
-    txh = fake_tx_hash()
+    status = "approved" if auto else "pending"
     wdoc = {
         "_id": wid, "address": m["_id"], "amount": round(amt, 4), "fee": round(fee, 4),
         "protocol_fee": round(protocol, 4), "net": round(receive, 4), "status": status,
-        "created_at": iso(now_utc()), "tx_hash": txh if auto else None, "approvals": [], "reason": None,
+        "created_at": iso(now_utc()), "tx_hash": None, "approvals": [], "reason": None,
     }
     await db.withdrawals.insert_one(wdoc)
     tx = {
         "_id": secrets.token_hex(12), "address": m["_id"], "type": "withdraw",
-        "amount": round(-amt, 6), "status": "confirmed" if auto else "pending",
-        "tx_hash": txh, "created_at": iso(now_utc()),
+        "amount": round(-amt, 6), "status": "pending",
+        "tx_hash": None, "created_at": iso(now_utc()),
         "meta": {"request_id": wid, "fee": round(fee, 4), "protocol_fee": round(protocol, 4), "received": round(receive, 4)},
     }
     await db.transactions.insert_one(tx)
     if auto:
-        await db.members.update_one({"_id": m["_id"]}, {"$inc": {"wallet_balance": receive}})
-    return {"ok": True, "status": status, "request_id": wid, "received": round(receive, 4),
-            "fee": round(fee, 4), "protocol_fee": round(protocol, 4),
-            "message": "Withdrawal completed" if auto else "Withdrawal requested — pending admin approval"}
+        wdoc = await process_payout(_admin_deps, wid)
+    msg = {"sent": "MERQ sent to your wallet — confirming on-chain",
+           "pending": "Withdrawal requested — waiting for admin approval",
+           "payout_failed": "Withdrawal is queued — the team will complete the transfer shortly"}.get(wdoc["status"], "Withdrawal requested")
+    return {"ok": True, "status": wdoc["status"], "request_id": wid, "received": round(receive, 4),
+            "fee": round(fee, 4), "protocol_fee": round(protocol, 4), "tx_hash": wdoc.get("tx_hash"), "message": msg}
+
+
+@api.get("/withdraw/history")
+async def withdraw_history(m: dict = Depends(current_member)):
+    docs = await db.withdrawals.find({"address": m["_id"]}).sort("created_at", -1).to_list(50)
+    out = []
+    for w in docs:
+        w = await refresh_sent(_admin_deps, w)
+        out.append({"id": w["_id"], "amount": w["amount"], "net": w["net"], "status": w["status"],
+                    "created_at": w["created_at"], "tx_hash": w.get("tx_hash"),
+                    "bscscan_url": f"{BSCSCAN_BASE}{w['tx_hash']}" if w.get("tx_hash") else None})
+    return out
 
 
 # ----------------------------- price -----------------------------
@@ -1047,6 +1062,7 @@ import types as _types
 from admin_panel import build_admin_router
 from techpass import build_techpass
 from ports import build_ports
+from payout import process_payout, refresh_sent, treasury_status
 _admin_deps = _types.SimpleNamespace(
     db=db, get_settings=get_settings, now_utc=now_utc, iso=iso, parse_iso=parse_iso,
     short=short, record_tx=record_tx, fake_tx_hash=fake_tx_hash,
@@ -1055,6 +1071,7 @@ _admin_deps = _types.SimpleNamespace(
     current_member=current_member, accrued_for_position=accrued_for_position,
     BSCSCAN_BASE=BSCSCAN_BASE, ADMIN_DEMO_ADDRESS=ADMIN_DEMO_ADDRESS,
     get_swap_config=get_swap_config, logger=logger,
+    process_payout=process_payout, refresh_sent=refresh_sent, treasury_status=treasury_status,
 )
 app.include_router(build_techpass(_admin_deps))
 app.include_router(build_ports(_admin_deps))

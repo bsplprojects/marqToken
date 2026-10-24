@@ -6,6 +6,7 @@ import { fmt, fmtUSD, shortAddr } from "@/lib/format";
 import { INCOME_GROUPS } from "@/lib/incomes";
 import { useLiveMerq } from "@/lib/useLiveMerq";
 import BrandLogo from "@/components/BrandLogo";
+import { UsdtLogo } from "@/components/UsdtLogo";
 import { PageHeader } from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { TechPassCard } from "@/components/techpass/TechPassCard";
@@ -82,6 +83,16 @@ export default function Dashboard() {
               )}
             </div>
             <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-600 mt-1">Live from connected wallet {shortAddr(member?.address)}</div>
+
+            <div data-testid="usdt-balance-display" className="mt-6 inline-flex items-center gap-3 rounded-2xl border border-emerald-400/15 bg-emerald-400/5 px-4 py-3">
+              <UsdtLogo size={36} />
+              <div>
+                <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">USDT Balance</div>
+                <div className="font-mono-merq text-xl font-bold text-white">
+                  {liveMerq.usdtError ? "Unavailable" : liveMerq.usdt === null ? "…" : fmt(liveMerq.usdt, 2)} <span className="text-sm text-slate-500">USDT</span>
+                </div>
+              </div>
+            </div>
 
             <div className="flex flex-wrap gap-3 mt-8">
               <button
