@@ -7,7 +7,7 @@ import BrandLogo from "@/components/BrandLogo";
 import { IncomeNav } from "@/components/IncomeNav";
 import {
   LayoutDashboard, Network as NetworkIcon,
-  ReceiptText, Wallet, User, Settings as SettingsIcon, ShieldCheck,
+  ReceiptText, Wallet, User, Settings as SettingsIcon,
   LogOut, Copy, Menu, X, Hexagon, ArrowLeftRight, Ticket, DoorOpen,
 } from "lucide-react";
 
@@ -128,11 +128,6 @@ export default function Layout({ children }) {
             BNB Smart Chain · Mainnet
           </div>
           <div className="flex items-center gap-3 ml-auto">
-            {member?.is_admin && (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1 font-mono-merq text-[10px] uppercase tracking-widest text-amber-300">
-                <ShieldCheck className="h-3 w-3" /> Admin
-              </span>
-            )}
             <button
               data-testid="wallet-address-badge"
               onClick={copyAddr}
