@@ -741,6 +741,47 @@ def build_admin_router(d):
                     body.control, {"reason": body.reason}, request)
         return {"ok": True}
 
+    # ------------------------- entry / unity ports -------------------------
+    @r.get("/ports/{port}")
+    async def ports_report(port: str, au: dict = Depends(require("deposits")), status: Optional[str] = None, q: Optional[str] = None):
+        return await d.ports_report(port, status, q)
+
+    @r.get("/ports/{port}/export")
+    async def ports_export(port: str, au: dict = Depends(require("reports"))):
+        if port not in d.PORTS:
+            raise HTTPException(404, "Unknown port")
+        docs = await db.port_purchases.find({"port": port}).sort("created_at", -1).to_list(100000)
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(["id", "wallet", "amount_usd", "merq_amount", "merq_price", "price_source", "status", "tx_hash", "receive_wallet", "created_at"])
+        for p in docs:
+            w.writerow([p["_id"], p["address"], p["amount_usd"], p["merq_amount"], p["merq_price"], p["price_source"],
+                        p["status"], p["tx_hash"], p["receive_wallet"], p["created_at"]])
+        buf.seek(0)
+        return StreamingResponse(iter([buf.getvalue()]), media_type="text/csv",
+                                 headers={"Content-Disposition": f"attachment; filename={port}_port_report.csv"})
+
+    @r.put("/ports/{port}/config")
+    async def ports_config_update(port: str, payload: dict, request: Request, au: dict = Depends(require("deposits", write=True))):
+        if port not in d.PORTS:
+            raise HTTPException(404, "Unknown port")
+        cur = (await d.ports_config())[port]
+        upd = {}
+        for k in ("min_usd", "max_usd"):
+            if k in payload:
+                try:
+                    upd[k] = float(payload[k])
+                except (TypeError, ValueError):
+                    raise HTTPException(400, f"{k} must be a number")
+        if "enabled" in payload:
+            upd["enabled"] = bool(payload["enabled"])
+        new = {**cur, **upd}
+        if not 1 <= new["min_usd"] <= new["max_usd"] <= 10000000:
+            raise HTTPException(400, "Minimum must be at least $1 and not more than the maximum")
+        await db.settings.update_one({"_id": "global"}, {"$set": {f"ports.{port}": new}})
+        await audit(au, f"update_{port}_port_config", "deposits", None, upd, request)
+        return {"ok": True, "config": new}
+
     # ------------------------- techpass -------------------------
     @r.get("/techpass")
     async def techpass_report(au: dict = Depends(require("deposits")), status: Optional[str] = None, q: Optional[str] = None):

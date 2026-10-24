@@ -1046,6 +1046,7 @@ app.include_router(api)
 import types as _types
 from admin_panel import build_admin_router
 from techpass import build_techpass
+from ports import build_ports
 _admin_deps = _types.SimpleNamespace(
     db=db, get_settings=get_settings, now_utc=now_utc, iso=iso, parse_iso=parse_iso,
     short=short, record_tx=record_tx, fake_tx_hash=fake_tx_hash,
@@ -1056,6 +1057,7 @@ _admin_deps = _types.SimpleNamespace(
     get_swap_config=get_swap_config, logger=logger,
 )
 app.include_router(build_techpass(_admin_deps))
+app.include_router(build_ports(_admin_deps))
 app.include_router(build_admin_router(_admin_deps))
 
 app.add_middleware(

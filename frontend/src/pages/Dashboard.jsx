@@ -7,6 +7,7 @@ import { INCOME_GROUPS } from "@/lib/incomes";
 import { PageHeader } from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { TechPassCard } from "@/components/techpass/TechPassCard";
+import { PortsCard } from "@/components/ports/PortsCard";
 import { toast } from "sonner";
 import {
   TrendingUp, Users, Network, ArrowDownToLine, ArrowUpFromLine, Share2,
@@ -124,6 +125,7 @@ export default function Dashboard() {
       </div>
 
       <TechPassCard />
+      <PortsCard />
 
       {/* income breakdown */}
       {INCOME_GROUPS.map((g) => (

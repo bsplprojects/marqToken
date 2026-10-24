@@ -87,7 +87,7 @@ def build_techpass(d):
                 d.logger.warning(f"TechPass price read failed: {e}")
         return float(settings.get("merq_price_usd") or 0), "admin_price", 18
 
-    async def refresh_pending(p, swap):
+    async def refresh_pending(p, swap, coll="techpass"):
         if p["status"] != "pending":
             return p
         st = await asyncio.to_thread(verify_transfer, swap["rpc_url"], p["tx_hash"], p["token_address"],
@@ -96,7 +96,7 @@ def build_techpass(d):
             st = "expired"
         if st != "pending":
             upd = {"status": st, "verified_at": d.iso(d.now_utc())}
-            await db.techpass.update_one({"_id": p["_id"]}, {"$set": upd})
+            await db[coll].update_one({"_id": p["_id"]}, {"$set": upd})
             p.update(upd)
         return p
 
@@ -166,5 +166,6 @@ def build_techpass(d):
 
     d.techpass_config = config
     d.techpass_refresh = refresh_pending
+    d.live_price = live_price
     d.techpass_public = public
     return r
