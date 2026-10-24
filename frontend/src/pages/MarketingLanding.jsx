@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
+import { LiveAlgoChart } from "@/components/landing/LiveAlgoChart";
+import { MarketVolume } from "@/components/landing/MarketVolume";
+import { RevenueStructure } from "@/components/landing/RevenueStructure";
+import { TokenAllocation } from "@/components/landing/TokenAllocation";
 import {
   Hexagon, ArrowRight, Rocket, Brain, LineChart, Wallet, Coins, Cpu, ShieldCheck,
   Activity, Gauge, Code2, PenTool, PieChart, MessageSquare, Search, Briefcase,
@@ -56,7 +60,8 @@ const TOKENOMICS = [
 const NAV = [
   { label: "AI", href: "#ai" },
   { label: "Algorithmic Trading", href: "#trading" },
-  { label: "Digital Utility", href: "#ecosystem" },
+  { label: "Market", href: "#market" },
+  { label: "Revenue", href: "#revenue" },
   { label: "Tokenomics", href: "#tokenomics" },
 ];
 
@@ -245,9 +250,20 @@ export default function MarketingLanding() {
             </div>
           ))}
         </div>
+        <div className="mt-6"><LiveAlgoChart /></div>
       </Section>
 
-      {/* TOKENOMICS */}
+      {/* MARKET VOLUME */}
+      <Section id="market" eyebrow="Market Volume" title={<>Live Crypto <span className="gold-text">Market Volume</span></>}
+        subtitle="Real-time 24-hour trading activity across the leading spot pairs our algorithms watch.">
+        <MarketVolume />
+      </Section>
+
+      {/* REVENUE */}
+      <Section id="revenue" eyebrow="MerqAI Revenue Structure" title={<>Where Value Comes From. <span className="gold-text">Where It Goes.</span></>}
+        subtitle="MerqAI revenue is generated from real ecosystem services and shared back across members, treasury and growth.">
+        <RevenueStructure />
+      </Section>
       <Section id="tokenomics" eyebrow="Tokenomics" title={<>The <span className="gold-text">MERQ</span> Utility Token</>}
         subtitle="Real value, real utility, real opportunities — a BEP-20 ecosystem token on BNB Smart Chain.">
         <div className="grid lg:grid-cols-5 gap-5">
@@ -272,6 +288,7 @@ export default function MarketingLanding() {
             </p>
           </div>
         </div>
+        <TokenAllocation />
       </Section>
 
       {/* ROADMAP */}

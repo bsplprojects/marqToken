@@ -805,6 +805,51 @@ async def root():
     return {"name": "MerqON API", "status": "ok"}
 
 
+BINANCE_DATA = "https://data-api.binance.vision/api/v3"
+MARKET_SYMBOLS = ["BNBUSDT", "BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT", "DOGEUSDT"]
+_market_cache: dict = {}
+
+
+async def _cached_get(key: str, ttl: int, url: str, params: dict):
+    import time, asyncio
+    hit = _market_cache.get(key)
+    if hit and time.time() - hit[0] < ttl:
+        return hit[1]
+    try:
+        r = await asyncio.to_thread(requests.get, url, params=params, timeout=8)
+        r.raise_for_status()
+        _market_cache[key] = (time.time(), r.json())
+    except Exception as e:
+        logger.warning(f"Market fetch failed {key}: {e}")
+        if not hit:
+            raise HTTPException(503, "Market data temporarily unavailable")
+    return _market_cache[key][1]
+
+
+@api.get("/market/klines")
+async def market_klines(interval: str = "1m", limit: int = 120):
+    if interval not in ("1m", "5m", "15m", "1h"):
+        raise HTTPException(400, "Unsupported interval")
+    limit = max(30, min(limit, 300))
+    raw = await _cached_get(f"k:{interval}:{limit}", 8, f"{BINANCE_DATA}/klines",
+                            {"symbol": "BNBUSDT", "interval": interval, "limit": limit})
+    return {"symbol": "BNB/USDT", "interval": interval, "source": "binance",
+            "candles": [{"t": k[0], "o": float(k[1]), "h": float(k[2]), "l": float(k[3]),
+                         "c": float(k[4]), "v": float(k[5])} for k in raw]}
+
+
+@api.get("/market/volume")
+async def market_volume():
+    import json as _json
+    raw = await _cached_get("vol", 30, f"{BINANCE_DATA}/ticker/24hr",
+                            {"symbols": _json.dumps(MARKET_SYMBOLS, separators=(",", ":"))})
+    rows = [{"symbol": x["symbol"].replace("USDT", ""), "price": float(x["lastPrice"]),
+             "change_pct": float(x["priceChangePercent"]), "quote_volume": float(x["quoteVolume"]),
+             "trades": int(x["count"])} for x in raw]
+    rows.sort(key=lambda r: r["quote_volume"], reverse=True)
+    return {"source": "binance", "pairs": rows, "total_quote_volume": sum(r["quote_volume"] for r in rows)}
+
+
 # ----------------------------- startup -----------------------------
 @app.on_event("startup")
 async def startup():
