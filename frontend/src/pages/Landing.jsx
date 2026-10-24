@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/api";
 import { SponsorField } from "@/components/SponsorField";
@@ -153,6 +153,17 @@ export default function Landing() {
                     No wallet extension detected — install MetaMask or open this page in your wallet's browser.
                   </p>
                 )}
+                <div className="mt-6 pt-5 border-t border-white/10 text-center text-sm text-slate-500">
+                  {isRegister ? (
+                    <>Already a member?{" "}
+                      <Link data-testid="login-link" to="/app" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">Log in</Link>
+                    </>
+                  ) : (
+                    <>New to MerqON?{" "}
+                      <Link data-testid="signup-link" to="/register" className="text-amber-400 hover:text-amber-300 font-medium transition-colors">Sign up with a referral</Link>
+                    </>
+                  )}
+                </div>
               </>
             ) : (
               <>
