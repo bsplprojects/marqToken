@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { fmt, fmtUSD, shortAddr } from "@/lib/format";
 import { INCOME_GROUPS } from "@/lib/incomes";
 import { useLiveMerq } from "@/lib/useLiveMerq";
+import BrandLogo from "@/components/BrandLogo";
 import { PageHeader } from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { TechPassCard } from "@/components/techpass/TechPassCard";
@@ -64,11 +65,12 @@ export default function Dashboard() {
                 <span className="h-1.5 w-1.5 rounded-full bg-current" /> {data.status}
               </span>
             </div>
-            <div className="mt-4 flex items-end gap-3" data-testid="merq-balance-display">
+            <div className="mt-4 flex items-center gap-4" data-testid="merq-balance-display">
+              <BrandLogo size={64} className="ring-2 shadow-[0_0_30px_rgba(243,186,47,0.25)] flex-shrink-0" />
               <span className="font-mono-merq text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight gold-text">
-                {!liveMerq.live ? "—" : liveMerq.balance === null ? "…" : fmt(liveMerq.balance, 2)}
+                {!liveMerq.live ? "0.00" : liveMerq.balance === null ? "…" : fmt(liveMerq.balance, 2)}
               </span>
-              <span className="font-mono-merq text-xl text-slate-500 mb-1">MERQ</span>
+              <span className="font-mono-merq text-xl text-slate-500 self-end mb-1">MERQ</span>
             </div>
             <div className="font-mono-merq text-slate-400 mt-2" data-testid="fiat-value-display">
               {!liveMerq.live ? (
