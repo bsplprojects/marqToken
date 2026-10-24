@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useAdminAuth, connectAdminMetaMask, connectAdminDemo, getAdminWallet } from "./AdminAuth";
+import { useAdminAuth, connectAdminMetaMask, getAdminWallet } from "./AdminAuth";
 import { Btn } from "./ui";
 import BrandLogo from "@/components/BrandLogo";
-import { ShieldCheck, Wallet, Fingerprint, Loader2, Lock, ArrowRight } from "lucide-react";
+import { Wallet, Fingerprint, Loader2, Lock, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminLogin() {
@@ -10,10 +10,10 @@ export default function AdminLogin() {
   const [wallet, setWallet] = useState(getAdminWallet());
   const [busy, setBusy] = useState(false);
 
-  const connect = async (kind) => {
+  const connect = async () => {
     setBusy(true);
     try {
-      const w = kind === "metamask" ? await connectAdminMetaMask() : connectAdminDemo();
+      const w = await connectAdminMetaMask();
       setWallet(w);
       toast.success("Wallet connected");
     } catch (e) { toast.error(e.message); } finally { setBusy(false); }
@@ -46,15 +46,8 @@ export default function AdminLogin() {
 
           {!wallet ? (
             <>
-              <Btn testid="admin-connect-metamask" className="w-full" onClick={() => connect("metamask")} disabled={busy}>
+              <Btn testid="admin-connect-metamask" className="w-full" onClick={connect} disabled={busy}>
                 <Wallet className="h-4 w-4" /> MetaMask / Injected <ArrowRight className="h-4 w-4 ml-auto" />
-              </Btn>
-              <div className="relative my-4">
-                <div className="h-px bg-white/10" />
-                <span className="absolute left-1/2 -translate-x-1/2 -top-2 px-3 bg-slate-950 font-mono-merq text-[10px] uppercase tracking-widest text-slate-600">or</span>
-              </div>
-              <Btn testid="admin-connect-demo" variant="ghost" className="w-full" onClick={() => connect("demo")} disabled={busy}>
-                <ShieldCheck className="h-4 w-4 text-amber-400" /> Demo Super Admin Wallet
               </Btn>
             </>
           ) : (

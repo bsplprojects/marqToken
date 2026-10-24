@@ -1,14 +1,11 @@
-import { Wallet, BrowserProvider } from "ethers";
-
-// Fixed demo admin wallet (Hardhat account #0) — simulated only, no real funds.
-export const ADMIN_DEMO_PK = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-export const ADMIN_DEMO_ADDRESS = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+import { BrowserProvider } from "ethers";
 
 const STORAGE = "merqon_wallet";
 
 export function getStoredWallet() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE));
+    const w = JSON.parse(localStorage.getItem(STORAGE));
+    return w?.mode === "metamask" ? w : null;
   } catch {
     return null;
   }
@@ -38,25 +35,9 @@ export async function connectMetaMask() {
   return storeWallet({ mode: "metamask", address });
 }
 
-// Create a fresh in-app demo wallet (full nonce + signature flow, no extension needed)
-export function connectDemoMember() {
-  const w = Wallet.createRandom();
-  return storeWallet({ mode: "demo", address: w.address, pk: w.privateKey });
-}
-
-// Connect the fixed demo admin wallet
-export function connectDemoAdmin() {
-  const w = new Wallet(ADMIN_DEMO_PK);
-  return storeWallet({ mode: "demo", address: w.address, pk: ADMIN_DEMO_PK });
-}
-
-// Sign an arbitrary message with the active wallet
+// Sign an arbitrary message with the connected wallet
 export async function signMessage(wallet, message) {
-  if (wallet.mode === "metamask") {
-    const provider = new BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
-    return signer.signMessage(message);
-  }
-  const w = new Wallet(wallet.pk);
-  return w.signMessage(message);
+  const provider = new BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  return signer.signMessage(message);
 }

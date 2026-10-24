@@ -297,6 +297,8 @@ async def admin_member(m: dict = Depends(current_member)) -> dict:
     settings = await get_settings()
     if not (m.get("is_admin") or m["_id"] in [a.lower() for a in settings.get("admin_addresses", [])]):
         raise HTTPException(403, "Admin access required")
+    if not await db.admin_users.find_one({"_id": m["_id"], "status": "active"}):
+        raise HTTPException(403, "Admin access required")
     return m
 
 
@@ -829,6 +831,9 @@ async def startup():
             "last_login": None,
         })
         logger.info("Seeded SUPER_ADMIN admin user admin@merqon.io")
+    # revoke admin access of the public demo key (it stays only as the network root)
+    await db.admin_users.update_one({"_id": ADMIN_DEMO_ADDRESS.lower()}, {"$set": {"status": "disabled"}})
+    await db.settings.update_one({"_id": "global"}, {"$pull": {"admin_addresses": ADMIN_DEMO_ADDRESS.lower()}})
     # seed owner super admin wallets from env
     owners = [to_checksum_address(a.strip()) for a in os.environ.get("OWNER_ADMIN_WALLETS", "").split(",") if a.strip()]
     for owner in owners:

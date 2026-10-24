@@ -1,14 +1,15 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { Wallet, BrowserProvider } from "ethers";
+import { BrowserProvider } from "ethers";
 import { adminApi, AUTH_API } from "./adminApi";
-import { ADMIN_DEMO_PK } from "@/lib/wallet";
 
 const AdminAuthContext = createContext(null);
 const STORE = "merqon_admin_wallet";
 
 function store(w) { localStorage.setItem(STORE, JSON.stringify(w)); return w; }
-export function getAdminWallet() { try { return JSON.parse(localStorage.getItem(STORE)); } catch { return null; } }
+export function getAdminWallet() {
+  try { const w = JSON.parse(localStorage.getItem(STORE)); return w?.mode === "metamask" ? w : null; } catch { return null; }
+}
 
 export async function connectAdminMetaMask() {
   if (!window.ethereum) throw new Error("No injected wallet (MetaMask) detected");
@@ -17,16 +18,9 @@ export async function connectAdminMetaMask() {
   const signer = await provider.getSigner();
   return store({ mode: "metamask", address: await signer.getAddress() });
 }
-export function connectAdminDemo() {
-  const w = new Wallet(ADMIN_DEMO_PK);
-  return store({ mode: "demo", address: w.address, pk: ADMIN_DEMO_PK });
-}
 async function sign(wallet, message) {
-  if (wallet.mode === "metamask") {
-    const provider = new BrowserProvider(window.ethereum);
-    return (await provider.getSigner()).signMessage(message);
-  }
-  return new Wallet(wallet.pk).signMessage(message);
+  const provider = new BrowserProvider(window.ethereum);
+  return (await provider.getSigner()).signMessage(message);
 }
 
 export function AdminAuthProvider({ children }) {

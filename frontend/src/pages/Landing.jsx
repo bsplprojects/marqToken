@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import {
-  connectMetaMask, connectDemoMember, connectDemoAdmin,
+  connectMetaMask,
   getStoredWallet, clearWallet, hasMetaMask,
 } from "@/lib/wallet";
 import { shortAddr } from "@/lib/format";
@@ -33,10 +33,7 @@ export default function Landing() {
   const doConnect = async (kind) => {
     setBusy(true);
     try {
-      let w;
-      if (kind === "metamask") w = await connectMetaMask();
-      else if (kind === "admin") w = connectDemoAdmin();
-      else w = connectDemoMember();
+      const w = await connectMetaMask();
       setWallet(w);
       toast.success(`Wallet connected · ${shortAddr(w.address)}`);
     } catch (e) {
@@ -140,32 +137,10 @@ export default function Landing() {
                   <ArrowRight className="h-4 w-4" />
                 </button>
                 {!hasMetaMask() && (
-                  <p className="text-[11px] text-slate-500 mt-2 text-center">No extension detected — use a demo wallet below.</p>
+                  <p data-testid="no-wallet-hint" className="text-[11px] text-slate-500 mt-2 text-center">
+                    No wallet extension detected — install MetaMask or open this page in your wallet's browser.
+                  </p>
                 )}
-
-                <div className="relative my-5">
-                  <div className="h-px bg-white/10" />
-                  <span className="absolute left-1/2 -translate-x-1/2 -top-2 px-3 bg-slate-950 font-mono-merq text-[10px] uppercase tracking-widest text-slate-600">or try a demo</span>
-                </div>
-
-                <button
-                  data-testid="connect-demo-member-button"
-                  disabled={busy}
-                  onClick={() => doConnect("member")}
-                  className="w-full flex items-center justify-between rounded-xl border border-white/10 bg-white/5 hover:border-emerald-400/30 text-white font-medium px-5 py-3.5 transition-colors mb-3 disabled:opacity-60"
-                >
-                  <span className="flex items-center gap-3"><Fingerprint className="h-5 w-5 text-emerald-400" /> Demo Member Wallet</span>
-                  <ArrowRight className="h-4 w-4 text-slate-500" />
-                </button>
-                <button
-                  data-testid="connect-demo-admin-button"
-                  disabled={busy}
-                  onClick={() => doConnect("admin")}
-                  className="w-full flex items-center justify-between rounded-xl border border-white/10 bg-white/5 hover:border-amber-400/30 text-white font-medium px-5 py-3.5 transition-colors disabled:opacity-60"
-                >
-                  <span className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-amber-400" /> Demo Admin Wallet</span>
-                  <ArrowRight className="h-4 w-4 text-slate-500" />
-                </button>
               </>
             ) : (
               <>

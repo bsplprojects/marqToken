@@ -63,3 +63,4 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 
 ## 2026-06 Update
 - Owner wallet 0xc1aCA21ABDfdBF0730e73B56fe949cD2703e63ad whitelisted as SUPER_ADMIN via OWNER_ADMIN_WALLETS env (startup seed: admin_users, settings.admin_addresses, members.is_admin).
+- Removed all demo wallet logins (member + admin UI). Public Hardhat demo key's admin access revoked; remains network root only. Legacy admin_member now also requires an active admin_users entry.
