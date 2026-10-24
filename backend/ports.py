@@ -55,6 +55,13 @@ def build_ports(d):
                 await d.techpass_refresh(p, swap, "port_purchases")
         return docs
 
+    @r.get("/price")
+    async def merq_price(m: dict = Depends(d.current_member)):
+        swap, settings = await d.get_swap_config(), await d.get_settings()
+        price, source, dec = await d.live_price(swap, settings)
+        return {"merq_price": price, "price_source": source, "decimals": dec,
+                "token_address": swap.get("merq_token_address"), "rpc_url": swap["rpc_url"]}
+
     @r.get("/status")
     async def status(m: dict = Depends(d.current_member)):
         cfg, swap, settings = await ports_config(), await d.get_swap_config(), await d.get_settings()

@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { fmt, fmtUSD, shortAddr } from "@/lib/format";
 import { INCOME_GROUPS } from "@/lib/incomes";
+import { useLiveMerq } from "@/lib/useLiveMerq";
 import { PageHeader } from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { TechPassCard } from "@/components/techpass/TechPassCard";
@@ -22,6 +23,7 @@ export default function Dashboard() {
     refetchInterval: 30000,
   });
   const { data: streams } = useQuery({ queryKey: ["income-streams"], queryFn: async () => (await api.get("/income/streams")).data });
+  const liveMerq = useLiveMerq(member?.address);
 
   const copyRef = () => {
     const link = `${window.location.origin}/register?ref=${member?.address}`;
@@ -64,16 +66,20 @@ export default function Dashboard() {
             </div>
             <div className="mt-4 flex items-end gap-3" data-testid="merq-balance-display">
               <span className="font-mono-merq text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight gold-text">
-                {fmt(data.total_balance, 2)}
+                {!liveMerq.live ? "—" : liveMerq.balance === null ? "…" : fmt(liveMerq.balance, 2)}
               </span>
               <span className="font-mono-merq text-xl text-slate-500 mb-1">MERQ</span>
             </div>
             <div className="font-mono-merq text-slate-400 mt-2" data-testid="fiat-value-display">
-              ≈ {fmtUSD(data.fiat_value)} <span className="text-slate-600 text-xs">· @ ${data.merq_price_usd}/MERQ</span>
+              {!liveMerq.live ? (
+                <span className="text-slate-500 text-sm">MERQ not live yet · balance will show from your wallet once the token launches</span>
+              ) : liveMerq.error ? (
+                <span className="text-rose-400 text-sm">Couldn't read your wallet balance, retrying…</span>
+              ) : (
+                <>≈ {fmtUSD(liveMerq.usd ?? 0)} <span className="text-slate-600 text-xs">· @ ${Number(liveMerq.price).toFixed(6)}/MERQ · {liveMerq.source === "pancakeswap_pool" ? "live pool" : "admin price"}</span></>
+              )}
             </div>
-            <div className="font-mono-merq text-xs text-slate-500 mt-1">
-              Wallet (available to deposit): <span className="text-amber-300">{fmt(data.wallet_balance)} MERQ</span>
-            </div>
+            <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-600 mt-1">Live from connected wallet {shortAddr(member?.address)}</div>
 
             <div className="grid grid-cols-3 gap-4 mt-8">
               <div className="rounded-xl border border-white/8 bg-white/5 p-4">
