@@ -7,8 +7,8 @@ import BrandLogo from "@/components/BrandLogo";
 import { IncomeNav } from "@/components/IncomeNav";
 import {
   LayoutDashboard, Network as NetworkIcon,
-  ReceiptText, Wallet, User, Settings as SettingsIcon,
-  LogOut, Copy, Menu, X, Hexagon, ArrowLeftRight, Ticket, DoorOpen,
+  ReceiptText, User, Settings as SettingsIcon,
+  LogOut, Copy, Menu, X, Hexagon, ArrowLeftRight, Ticket, DoorOpen, ArrowUpFromLine,
 } from "lucide-react";
 
 const NAV = [
@@ -19,7 +19,7 @@ const NAV = [
   { to: "/network", label: "My Network", icon: NetworkIcon, tid: "nav-network" },
   { income: true },
   { to: "/transactions", label: "Transactions", icon: ReceiptText, tid: "nav-transactions" },
-  { to: "/wallet", label: "Wallet", icon: Wallet, tid: "nav-wallet" },
+  { to: "/withdraw", label: "Withdraw", icon: ArrowUpFromLine, tid: "nav-withdraw" },
   { to: "/swap", label: "Swap", icon: ArrowLeftRight, tid: "nav-swap" },
   { to: "/profile", label: "My Profile", icon: User, tid: "nav-profile" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, tid: "nav-settings" },

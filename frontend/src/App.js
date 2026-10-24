@@ -9,7 +9,7 @@ import Dashboard from "@/pages/Dashboard";
 import Network from "@/pages/Network";
 import IncomeStream from "@/pages/IncomeStream";
 import Transactions from "@/pages/Transactions";
-import WalletPage from "@/pages/WalletPage";
+import Withdraw from "@/pages/Withdraw";
 import Swap from "@/pages/Swap";
 import TechPass from "@/pages/TechPass";
 import Port from "@/pages/Port";
@@ -53,7 +53,7 @@ function App() {
             <Route path="/network" element={<Protected><Network /></Protected>} />
             <Route path="/income/:slug" element={<Protected><IncomeStream /></Protected>} />
             <Route path="/transactions" element={<Protected><Transactions /></Protected>} />
-            <Route path="/wallet" element={<Protected><WalletPage /></Protected>} />
+            <Route path="/withdraw" element={<Protected><Withdraw /></Protected>} />
             <Route path="/swap" element={<Protected><Swap /></Protected>} />
             <Route path="/techpass" element={<Protected><TechPass /></Protected>} />
             <Route path="/ports/:port" element={<Protected><Port /></Protected>} />
