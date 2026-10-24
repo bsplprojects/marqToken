@@ -316,6 +316,16 @@ async def auth_nonce(req: NonceReq):
     return {"message": msg, "nonce": nonce}
 
 
+@api.get("/auth/lookup/{address}")
+async def auth_lookup(address: str):
+    if not is_address(address):
+        raise HTTPException(400, "Invalid wallet address")
+    m = await db.members.find_one({"_id": address.lower()}, {"_id": 1})
+    settings = await get_settings()
+    is_admin = address.lower() in [a.lower() for a in settings.get("admin_addresses", [])]
+    return {"address": to_checksum_address(address), "registered": bool(m), "sponsor_required": not m and not is_admin}
+
+
 @api.post("/auth/verify")
 async def auth_verify(req: VerifyReq):
     if not is_address(req.address):
@@ -343,11 +353,8 @@ async def auth_verify(req: VerifyReq):
             sp = await db.members.find_one({"_id": req.ref.lower()})
             if sp:
                 sponsor = req.ref.lower()
-        # default sponsor = admin root (if exists and not admin themselves)
         if sponsor is None and not is_admin:
-            root = await db.members.find_one({"is_admin": True})
-            if root:
-                sponsor = root["_id"]
+            raise HTTPException(400, "A registered sponsor wallet is required to sign up")
         m = new_member_doc(addr, sponsor, settings, is_admin=is_admin)
         if sponsor:
             parent, leg = await binary_place(sponsor)

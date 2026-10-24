@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { api } from "@/lib/api";
+import { SponsorField } from "@/components/SponsorField";
 import { toast } from "sonner";
 import {
   connectMetaMask,
@@ -21,13 +23,21 @@ export default function Landing() {
   const [wallet, setWallet] = useState(getStoredWallet());
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState("connect");
+  const [account, setAccount] = useState(null);
+  const [sponsorInput, setSponsorInput] = useState(ref || "");
+  const [sponsor, setSponsor] = useState(null);
+  const isRegister = useLocation().pathname === "/register";
+  const needsSponsor = account?.sponsor_required;
 
   useEffect(() => {
     if (!loading && member) navigate("/dashboard", { replace: true });
   }, [loading, member, navigate]);
 
   useEffect(() => {
-    if (wallet) setStep("sign");
+    if (!wallet) return;
+    setStep("sign");
+    setAccount(null);
+    api.get(`/auth/lookup/${wallet.address}`).then(({ data }) => setAccount(data)).catch(() => setAccount({ registered: true }));
   }, [wallet]);
 
   const doConnect = async (kind) => {
@@ -46,7 +56,7 @@ export default function Landing() {
   const doSignIn = async () => {
     setBusy(true);
     try {
-      const res = await signIn(wallet, ref);
+      const res = await signIn(wallet, needsSponsor ? sponsor : null);
       toast.success(res.is_new ? "Welcome to MerqON! Account created." : "Signature verified · Signed in");
       navigate("/dashboard", { replace: true });
     } catch (e) {
@@ -124,8 +134,10 @@ export default function Landing() {
 
             {step === "connect" ? (
               <>
-                <h2 className="font-display text-2xl font-bold text-white">Connect Wallet</h2>
-                <p className="text-slate-500 text-sm mt-1 mb-6">Choose how you want to access MerqON.</p>
+                <h2 className="font-display text-2xl font-bold text-white">{isRegister ? "Create Account" : "Connect Wallet"}</h2>
+                <p className="text-slate-500 text-sm mt-1 mb-6">
+                  {isRegister ? "Connect your wallet to join with your sponsor." : "Log in, or sign up with a sponsor if you're new."}
+                </p>
 
                 <button
                   data-testid="connect-wallet-button"
@@ -153,19 +165,37 @@ export default function Landing() {
                   <div className="font-mono-merq text-sm text-amber-300 break-all">{wallet?.address}</div>
                   <div className="font-mono-merq text-[10px] text-slate-600 mt-2 uppercase tracking-widest">{wallet?.mode} wallet</div>
                 </div>
-                <p className="text-slate-500 text-sm mb-5 leading-relaxed">
-                  Sign a one-time message to prove ownership. This generates no transaction and costs no gas.
-                </p>
+                {!account ? (
+                  <div data-testid="account-checking" className="flex items-center justify-center gap-2 text-sm text-slate-500 py-4">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Checking account…
+                  </div>
+                ) : (
+                  <>
+                    {needsSponsor ? (
+                      <>
+                        <div data-testid="signup-notice" className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 mb-5 text-xs text-amber-200 leading-relaxed">
+                          This wallet isn't registered yet. Paste your sponsor's wallet address or referral link to sign up.
+                        </div>
+                        <SponsorField value={sponsorInput} onChange={setSponsorInput} onValid={setSponsor} self={wallet?.address} />
+                      </>
+                    ) : (
+                      <p className="text-slate-500 text-sm mb-5 leading-relaxed">
+                        Sign a one-time message to prove ownership. This generates no transaction and costs no gas.
+                      </p>
+                    )}
+                    <button
+                      data-testid="wallet-sign-button"
+                      disabled={busy || (needsSponsor && !sponsor)}
+                      onClick={doSignIn}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-4 transition-colors disabled:opacity-60"
+                    >
+                      {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Fingerprint className="h-5 w-5" />}
+                      {busy ? "Verifying signature…" : needsSponsor ? "Sign Up" : "Sign In"}
+                    </button>
+                  </>
+                )}
                 <button
-                  data-testid="wallet-sign-button"
-                  disabled={busy}
-                  onClick={doSignIn}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-4 transition-colors disabled:opacity-60"
-                >
-                  {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : <Fingerprint className="h-5 w-5" />}
-                  {busy ? "Verifying signature…" : "Sign In"}
-                </button>
-                <button
+                  data-testid="use-different-wallet-button"
                   onClick={reset}
                   className="w-full text-center text-xs text-slate-500 hover:text-slate-300 mt-4 transition-colors"
                 >
