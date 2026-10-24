@@ -829,6 +829,18 @@ async def startup():
             "last_login": None,
         })
         logger.info("Seeded SUPER_ADMIN admin user admin@merqon.io")
+    # seed owner super admin wallets from env
+    owners = [to_checksum_address(a.strip()) for a in os.environ.get("OWNER_ADMIN_WALLETS", "").split(",") if a.strip()]
+    for owner in owners:
+        oid = owner.lower()
+        await db.settings.update_one({"_id": "global"}, {"$addToSet": {"admin_addresses": oid}})
+        await db.members.update_one({"_id": oid}, {"$set": {"is_admin": True}})
+        await db.admin_users.update_one({"_id": oid}, {
+            "$set": {"role": "SUPER_ADMIN", "status": "active"},
+            "$setOnInsert": {"address": owner, "email": None, "name": "Owner", "twofa_enabled": False,
+                             "created_at": iso(now_utc()), "last_login": None},
+        }, upsert=True)
+        logger.info(f"Ensured owner SUPER_ADMIN {owner}")
     # seed rule versions V1 from current settings
     if await db.rule_versions.count_documents({}) == 0:
         base = [

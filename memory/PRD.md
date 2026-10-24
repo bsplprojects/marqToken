@@ -60,3 +60,6 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - Sections: Hero (Building a Connected Digital Ecosystem), 4 pillars (AI Solutions, Algorithmic Trading, Digital Utility, Tokenomics), Introducing MerqON AI + 3 core segments + mission, AI Platform (6 capabilities), Algorithmic Trading Infrastructure (5 components + risk note), MERQ Tokenomics, Future Utility Roadmap (4 phases + vision), CTA + footer with disclaimers.
 - Routing change: "/" = MarketingLanding; DApp wallet-connect moved to "/app" (and "/register?ref="); Protected redirects to "/app". "Launch App" CTAs link to /app.
 - File: /app/frontend/src/pages/MarketingLanding.jsx. Static content, no backend dependency.
+
+## 2026-06 Update
+- Owner wallet 0xc1aCA21ABDfdBF0730e73B56fe949cD2703e63ad whitelisted as SUPER_ADMIN via OWNER_ADMIN_WALLETS env (startup seed: admin_users, settings.admin_addresses, members.is_admin).
