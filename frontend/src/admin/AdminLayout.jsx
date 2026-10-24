@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Network, Trophy, Medal, Landmark, ArrowDownToLine,
   ArrowUpFromLine, TrendingUp, GitMerge, Coins, Gift, Layers, Boxes, Banknote,
   Droplets, SlidersHorizontal, FileBarChart, Scale, Bell, Headphones, UserCog,
-  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, ArrowLeftRight,
+  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, ArrowLeftRight, Ticket,
 } from "lucide-react";
 
 const NAV = [
@@ -23,6 +23,7 @@ const NAV = [
     { to: "ranks", label: "Rank Management", icon: Medal, mod: "ranks" },
   ]},
   { group: "Finance", items: [
+    { to: "techpass", label: "TechPass Sales", icon: Ticket, mod: "deposits" },
     { to: "deposits", label: "Deposits", icon: ArrowDownToLine, mod: "deposits" },
     { to: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, mod: "withdrawals" },
     { to: "income", label: "Income", icon: Landmark, mod: "income" },

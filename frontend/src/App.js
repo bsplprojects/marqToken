@@ -11,6 +11,7 @@ import IncomeStream from "@/pages/IncomeStream";
 import Transactions from "@/pages/Transactions";
 import WalletPage from "@/pages/WalletPage";
 import Swap from "@/pages/Swap";
+import TechPass from "@/pages/TechPass";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import AdminApp from "@/admin/AdminApp";
@@ -53,6 +54,7 @@ function App() {
             <Route path="/transactions" element={<Protected><Transactions /></Protected>} />
             <Route path="/wallet" element={<Protected><WalletPage /></Protected>} />
             <Route path="/swap" element={<Protected><Swap /></Protected>} />
+            <Route path="/techpass" element={<Protected><TechPass /></Protected>} />
             <Route path="/profile" element={<Protected><Profile /></Protected>} />
             <Route path="/settings" element={<Protected><Settings /></Protected>} />
             <Route path="/admin/*" element={<AdminApp />} />

@@ -30,6 +30,7 @@ import Health from "./pages/Health";
 import Emergency from "./pages/Emergency";
 import SystemSettings from "./pages/SystemSettings";
 import SwapSettings from "./pages/SwapSettings";
+import TechPassReport from "./pages/TechPassReport";
 
 function Shell() {
   const { admin, loading } = useAdminAuth();
@@ -68,6 +69,7 @@ function Shell() {
         <Route path="emergency" element={<Emergency />} />
         <Route path="settings" element={<SystemSettings />} />
         <Route path="swap" element={<SwapSettings />} />
+        <Route path="techpass" element={<TechPassReport />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </AdminLayout>

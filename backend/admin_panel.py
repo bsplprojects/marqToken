@@ -741,6 +741,66 @@ def build_admin_router(d):
                     body.control, {"reason": body.reason}, request)
         return {"ok": True}
 
+    # ------------------------- techpass -------------------------
+    @r.get("/techpass")
+    async def techpass_report(au: dict = Depends(require("deposits")), status: Optional[str] = None, q: Optional[str] = None):
+        cfg, swap = await d.techpass_config(), await d.get_swap_config()
+        flt = {}
+        if status:
+            flt["status"] = status
+        if q:
+            flt["address"] = {"$regex": q.lower()}
+        docs = await db.techpass.find(flt).sort("created_at", -1).to_list(1000)
+        for p in docs:
+            if p["status"] == "pending":
+                await d.techpass_refresh(p, swap)
+        allp = await db.techpass.find({}, {"status": 1, "merq_amount": 1, "price_usd": 1}).to_list(100000)
+        conf = [p for p in allp if p["status"] == "confirmed"]
+        return {"config": cfg, "summary": {
+            "sold": len(conf), "pending": sum(1 for p in allp if p["status"] == "pending"),
+            "failed": sum(1 for p in allp if p["status"] in ("failed", "invalid")),
+            "total_usd": round(sum(p["price_usd"] for p in conf), 2),
+            "total_merq": round(sum(p["merq_amount"] for p in conf), 6)},
+            "rows": [d.techpass_public(p) for p in docs]}
+
+    @r.get("/techpass/export")
+    async def techpass_export(au: dict = Depends(require("reports"))):
+        docs = await db.techpass.find({}).sort("created_at", -1).to_list(100000)
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(["id", "wallet", "price_usd", "merq_amount", "merq_price", "price_source", "status", "tx_hash", "receive_wallet", "created_at"])
+        for p in docs:
+            w.writerow([p["_id"], p["address"], p["price_usd"], p["merq_amount"], p["merq_price"], p["price_source"],
+                        p["status"], p["tx_hash"], p["receive_wallet"], p["created_at"]])
+        buf.seek(0)
+        return StreamingResponse(iter([buf.getvalue()]), media_type="text/csv",
+                                 headers={"Content-Disposition": "attachment; filename=techpass_report.csv"})
+
+    @r.put("/techpass/config")
+    async def techpass_config_update(payload: dict, request: Request, au: dict = Depends(require("deposits", write=True))):
+        from eth_utils import is_address, to_checksum_address
+        cur = await d.techpass_config()
+        upd = {}
+        if "receive_wallet" in payload:
+            v = (payload["receive_wallet"] or "").strip()
+            if not is_address(v):
+                raise HTTPException(400, "Token receiving address is not a valid wallet address")
+            upd["receive_wallet"] = to_checksum_address(v)
+        if "price_usd" in payload:
+            try:
+                v = float(payload["price_usd"])
+            except (TypeError, ValueError):
+                raise HTTPException(400, "Price must be a number")
+            if not 1 <= v <= 100000:
+                raise HTTPException(400, "Price must be between 1 and 100000 USD")
+            upd["price_usd"] = v
+        if "enabled" in payload:
+            upd["enabled"] = bool(payload["enabled"])
+        new = {**cur, **upd}
+        await db.settings.update_one({"_id": "global"}, {"$set": {"techpass": new}})
+        await audit(au, "update_techpass_config", "deposits", None, upd, request)
+        return {"ok": True, "config": new}
+
     # ------------------------- swap config -------------------------
     @r.get("/swap")
     async def swap_get(au: dict = Depends(require("token"))):

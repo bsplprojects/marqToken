@@ -8,11 +8,12 @@ import { IncomeNav } from "@/components/IncomeNav";
 import {
   LayoutDashboard, Network as NetworkIcon,
   ReceiptText, Wallet, User, Settings as SettingsIcon, ShieldCheck,
-  LogOut, Copy, Menu, X, Hexagon, ArrowLeftRight,
+  LogOut, Copy, Menu, X, Hexagon, ArrowLeftRight, Ticket,
 } from "lucide-react";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, tid: "nav-dashboard" },
+  { to: "/techpass", label: "Merq TechPass", icon: Ticket, tid: "nav-techpass" },
   { to: "/network", label: "My Network", icon: NetworkIcon, tid: "nav-network" },
   { income: true },
   { to: "/transactions", label: "Transactions", icon: ReceiptText, tid: "nav-transactions" },

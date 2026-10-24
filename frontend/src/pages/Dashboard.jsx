@@ -6,6 +6,7 @@ import { fmt, fmtUSD, shortAddr } from "@/lib/format";
 import { INCOME_GROUPS } from "@/lib/incomes";
 import { PageHeader } from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
+import { TechPassCard } from "@/components/techpass/TechPassCard";
 import { toast } from "sonner";
 import {
   TrendingUp, Users, Network, ArrowDownToLine, ArrowUpFromLine, Share2,
@@ -121,6 +122,8 @@ export default function Dashboard() {
           <StatCard testid="stat-volume" label="Team Volume" value={`${fmt(data.network.team_volume, 0)} MERQ`} icon={TrendingUp} accent="emerald" />
         </div>
       </div>
+
+      <TechPassCard />
 
       {/* income breakdown */}
       {INCOME_GROUPS.map((g) => (

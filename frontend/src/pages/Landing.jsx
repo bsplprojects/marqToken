@@ -30,8 +30,8 @@ export default function Landing() {
   const needsSponsor = account?.sponsor_required;
 
   useEffect(() => {
-    if (!loading && member) navigate("/dashboard", { replace: true });
-  }, [loading, member, navigate]);
+    if (!loading && member && !busy) navigate("/dashboard", { replace: true });
+  }, [loading, member, navigate, busy]);
 
   useEffect(() => {
     if (!wallet) return;
@@ -58,7 +58,7 @@ export default function Landing() {
     try {
       const res = await signIn(wallet, needsSponsor ? sponsor : null);
       toast.success(res.is_new ? "Welcome to MerqON! Account created." : "Signature verified · Signed in");
-      navigate("/dashboard", { replace: true });
+      navigate(res.is_new ? "/techpass?welcome=1" : "/dashboard", { replace: true });
     } catch (e) {
       toast.error(e?.response?.data?.detail || e.message || "Sign-in failed");
     } finally {

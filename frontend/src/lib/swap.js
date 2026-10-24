@@ -64,7 +64,7 @@ export const parseAmount = (v, dec) => {
   try { return v ? parseUnits(String(v), dec) : 0n; } catch { return 0n; }
 };
 
-async function ensureChain() {
+export async function ensureChain() {
   try {
     await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: BSC.chainId }] });
   } catch (e) {

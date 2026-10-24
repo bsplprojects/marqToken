@@ -1045,6 +1045,7 @@ app.include_router(api)
 # Admin Panel router (RBAC, audit, full modules)
 import types as _types
 from admin_panel import build_admin_router
+from techpass import build_techpass
 _admin_deps = _types.SimpleNamespace(
     db=db, get_settings=get_settings, now_utc=now_utc, iso=iso, parse_iso=parse_iso,
     short=short, record_tx=record_tx, fake_tx_hash=fake_tx_hash,
@@ -1052,8 +1053,9 @@ _admin_deps = _types.SimpleNamespace(
     build_sponsor_tree=build_sponsor_tree, build_placement_tree=build_placement_tree,
     current_member=current_member, accrued_for_position=accrued_for_position,
     BSCSCAN_BASE=BSCSCAN_BASE, ADMIN_DEMO_ADDRESS=ADMIN_DEMO_ADDRESS,
-    get_swap_config=get_swap_config,
+    get_swap_config=get_swap_config, logger=logger,
 )
+app.include_router(build_techpass(_admin_deps))
 app.include_router(build_admin_router(_admin_deps))
 
 app.add_middleware(
