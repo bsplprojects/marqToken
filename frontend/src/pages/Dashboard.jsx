@@ -2,13 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { fmt, fmtUSD, shortAddr, INCOME_META } from "@/lib/format";
+import { fmt, fmtUSD, shortAddr } from "@/lib/format";
+import { INCOME_GROUPS } from "@/lib/incomes";
 import { PageHeader } from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { toast } from "sonner";
 import {
-  Wallet, TrendingUp, Users, Network, ArrowDownToLine, ArrowUpFromLine,
-  Share2, Coins, Gift, Layers, Sparkles,
+  TrendingUp, Users, Network, ArrowDownToLine, ArrowUpFromLine, Share2,
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -19,6 +19,7 @@ export default function Dashboard() {
     queryFn: async () => (await api.get("/member/dashboard")).data,
     refetchInterval: 30000,
   });
+  const { data: streams } = useQuery({ queryKey: ["income-streams"], queryFn: async () => (await api.get("/income/streams")).data });
 
   const copyRef = () => {
     const link = `${window.location.origin}/register?ref=${member?.address}`;
@@ -37,13 +38,6 @@ export default function Dashboard() {
     );
   }
 
-  const incomeCards = [
-    { key: "referral", icon: Share2, accent: "amber" },
-    { key: "profit_growth", icon: TrendingUp, accent: "emerald" },
-    { key: "pg_commission", icon: Coins, accent: "cyan" },
-    { key: "reward", icon: Gift, accent: "violet" },
-    { key: "autopool", icon: Layers, accent: "rose" },
-  ];
 
   return (
     <div>
@@ -129,22 +123,20 @@ export default function Dashboard() {
       </div>
 
       {/* income breakdown */}
-      <h2 className="font-display text-xl font-bold text-white mt-10 mb-4 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-amber-400" /> Income Streams
-      </h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {incomeCards.map((c) => (
-          <StatCard
-            key={c.key}
-            testid={`income-card-${c.key}`}
-            label={INCOME_META[c.key].label}
-            value={fmt(data.income[c.key])}
-            sub="MERQ"
-            icon={c.icon}
-            accent={c.accent}
-          />
-        ))}
-      </div>
+      {INCOME_GROUPS.map((g) => (
+        <div key={g.key} data-testid={`income-group-${g.key}`}>
+          <h2 className="font-display text-xl font-bold text-white mt-10 mb-4 flex items-center gap-2">
+            <g.icon className="h-5 w-5 text-amber-400" /> {g.label}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {g.items.map((c) => (
+              <button key={c.key} onClick={() => navigate(`/income/${c.slug}`)} className="text-left">
+                <StatCard testid={`income-card-${c.key}`} label={c.label} value={fmt(streams?.[c.key] ?? 0)} sub="MERQ" icon={c.icon} accent={c.accent} />
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

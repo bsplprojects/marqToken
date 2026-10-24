@@ -699,6 +699,31 @@ async def income_summary(m: dict = Depends(current_member)):
             "breakdown": {k: round(v, 4) for k, v in m["income"].items()}}
 
 
+INCOME_STREAMS = {
+    "tp_partner_onboarding": "Merq TechPass", "tp_momentum_booster": "Merq TechPass", "tp_global_momentum": "Merq TechPass",
+    "port_partner_onboarding_rewards": "Merq Entry & Unity Port", "port_level_income": "Merq Entry & Unity Port",
+    "port_rank_rewards": "Merq Entry & Unity Port",
+}
+
+
+@api.get("/income/streams")
+async def income_streams(m: dict = Depends(current_member)):
+    inc = m.get("income", {})
+    return {k: round(inc.get(k, 0.0), 4) for k in INCOME_STREAMS}
+
+
+@api.get("/income/stream/{key}")
+async def income_stream(key: str, m: dict = Depends(current_member)):
+    if key not in INCOME_STREAMS:
+        raise HTTPException(404, "Unknown income stream")
+    txs = await db.transactions.find({"address": m["_id"], "type": key}).sort("created_at", -1).to_list(500)
+    return {"key": key, "group": INCOME_STREAMS[key], "total": round(m.get("income", {}).get(key, 0.0), 4),
+            "rules_configured": False,
+            "history": [{"id": t["_id"], "amount": t["amount"], "status": t["status"], "tx_hash": t["tx_hash"],
+                         "bscscan_url": BSCSCAN_BASE + t["tx_hash"], "created_at": t["created_at"]} for t in txs]}
+
+
+
 @api.get("/income/history")
 async def income_history(m: dict = Depends(current_member)):
     income_types = ["referral", "profit_growth", "pg_commission", "reward", "autopool"]

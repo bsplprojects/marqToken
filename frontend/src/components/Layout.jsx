@@ -4,8 +4,9 @@ import { useAuth } from "@/context/AuthContext";
 import { shortAddr } from "@/lib/format";
 import { toast } from "sonner";
 import BrandLogo from "@/components/BrandLogo";
+import { IncomeNav } from "@/components/IncomeNav";
 import {
-  LayoutDashboard, Network as NetworkIcon, TrendingUp, Layers, Award,
+  LayoutDashboard, Network as NetworkIcon,
   ReceiptText, Wallet, User, Settings as SettingsIcon, ShieldCheck,
   LogOut, Copy, Menu, X, Hexagon, ArrowLeftRight,
 } from "lucide-react";
@@ -13,9 +14,7 @@ import {
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, tid: "nav-dashboard" },
   { to: "/network", label: "My Network", icon: NetworkIcon, tid: "nav-network" },
-  { to: "/income", label: "Income", icon: TrendingUp, tid: "nav-income" },
-  { to: "/autopool", label: "Autopool", icon: Layers, tid: "nav-autopool" },
-  { to: "/rewards", label: "Rewards", icon: Award, tid: "nav-rewards" },
+  { income: true },
   { to: "/transactions", label: "Transactions", icon: ReceiptText, tid: "nav-transactions" },
   { to: "/wallet", label: "Wallet", icon: Wallet, tid: "nav-wallet" },
   { to: "/swap", label: "Swap", icon: ArrowLeftRight, tid: "nav-swap" },
@@ -48,6 +47,7 @@ export default function Layout({ children }) {
 
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         {nav.map((item) => {
+          if (item.income) return <IncomeNav key="income" onNavigate={() => setOpen(false)} />;
           const active = location.pathname === item.to;
           const Icon = item.icon;
           return (
