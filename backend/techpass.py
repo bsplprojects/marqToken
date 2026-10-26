@@ -98,6 +98,8 @@ def build_techpass(d):
             upd = {"status": st, "verified_at": d.iso(d.now_utc())}
             await db[coll].update_one({"_id": p["_id"]}, {"$set": upd})
             p.update(upd)
+            if coll == "techpass" and st == "confirmed":
+                await d.process_techpass_income(p)
         return p
 
     def public(p):
@@ -162,6 +164,8 @@ def build_techpass(d):
                "created_at": d.iso(d.now_utc()), "verified_at": d.iso(d.now_utc()) if st == "confirmed" else None}
         await db.techpass.insert_one(doc)
         await db.techpass_quotes.delete_one({"_id": q["_id"]})
+        if st == "confirmed":
+            await d.process_techpass_income(doc)
         return public(doc)
 
     d.techpass_config = config

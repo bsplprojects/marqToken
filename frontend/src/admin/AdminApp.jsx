@@ -32,6 +32,7 @@ import SystemSettings from "./pages/SystemSettings";
 import SwapSettings from "./pages/SwapSettings";
 import TechPassReport from "./pages/TechPassReport";
 import PortsReport from "./pages/PortsReport";
+import IncomeRules from "./pages/IncomeRules";
 
 function Shell() {
   const { admin, loading } = useAdminAuth();
@@ -72,6 +73,7 @@ function Shell() {
         <Route path="swap" element={<SwapSettings />} />
         <Route path="techpass" element={<TechPassReport />} />
         <Route path="ports" element={<PortsReport />} />
+        <Route path="income-rules" element={<IncomeRules />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </AdminLayout>

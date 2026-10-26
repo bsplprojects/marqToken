@@ -718,9 +718,14 @@ async def income_stream(key: str, m: dict = Depends(current_member)):
         raise HTTPException(404, "Unknown income stream")
     txs = await db.transactions.find({"address": m["_id"], "type": key}).sort("created_at", -1).to_list(500)
     return {"key": key, "group": INCOME_STREAMS[key], "total": round(m.get("income", {}).get(key, 0.0), 4),
-            "rules_configured": False,
-            "history": [{"id": t["_id"], "amount": t["amount"], "status": t["status"], "tx_hash": t["tx_hash"],
-                         "bscscan_url": BSCSCAN_BASE + t["tx_hash"], "created_at": t["created_at"]} for t in txs]}
+            "total_usd": round(m.get("income_usd", {}).get(key, 0.0), 2),
+            "rules_configured": key.startswith("tp_"),
+            "boards": await _admin_deps.member_mb(m["_id"]) if key == "tp_momentum_booster" else None,
+            "history": [{"id": t["_id"], "amount": t["amount"], "status": t["status"], "tx_hash": t.get("tx_hash"),
+                         "usd": (t.get("meta") or {}).get("usd"), "board": (t.get("meta") or {}).get("board"),
+                         "level": (t.get("meta") or {}).get("level"), "from": (t.get("meta") or {}).get("from"),
+                         "bscscan_url": BSCSCAN_BASE + t["tx_hash"] if t.get("tx_hash") else None,
+                         "created_at": t["created_at"]} for t in txs]}
 
 
 
@@ -1019,6 +1024,11 @@ async def startup():
                              "created_at": iso(now_utc()), "last_login": None},
         }, upsert=True)
         logger.info(f"Ensured owner SUPER_ADMIN {owner}")
+    try:
+        await _admin_deps.income_backfill()
+    except Exception as e:
+        logger.warning(f"TechPass income backfill failed: {e}")
+
     # seed rule versions V1 from current settings
     if await db.rule_versions.count_documents({}) == 0:
         base = [
@@ -1063,6 +1073,7 @@ from admin_panel import build_admin_router
 from techpass import build_techpass
 from ports import build_ports
 from payout import process_payout, refresh_sent, treasury_status
+from income_engine import build_income_engine
 _admin_deps = _types.SimpleNamespace(
     db=db, get_settings=get_settings, now_utc=now_utc, iso=iso, parse_iso=parse_iso,
     short=short, record_tx=record_tx, fake_tx_hash=fake_tx_hash,
@@ -1075,6 +1086,7 @@ _admin_deps = _types.SimpleNamespace(
 )
 app.include_router(build_techpass(_admin_deps))
 app.include_router(build_ports(_admin_deps))
+build_income_engine(_admin_deps)
 app.include_router(build_admin_router(_admin_deps))
 
 app.add_middleware(

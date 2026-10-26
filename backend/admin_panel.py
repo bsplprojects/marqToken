@@ -763,6 +763,53 @@ def build_admin_router(d):
                     body.control, {"reason": body.reason}, request)
         return {"ok": True}
 
+    # ------------------------- techpass income rules -------------------------
+    @r.get("/income-rules")
+    async def income_rules_get(au: dict = Depends(require("settings"))):
+        rules = await d.income_rules()
+        totals = {}
+        for k in ("tp_partner_onboarding", "tp_momentum_booster", "tp_global_momentum"):
+            agg = await db.members.aggregate([{"$group": {"_id": None, "usd": {"$sum": f"$income_usd.{k}"},
+                                                          "merq": {"$sum": f"$income.{k}"}}}]).to_list(1)
+            totals[k] = {"usd": round(agg[0]["usd"], 2) if agg else 0, "merq": round(agg[0]["merq"], 4) if agg else 0}
+        boards = {f"MB{i + 1}": await db.matrix.count_documents({"board": f"MB{i + 1}"}) for i in range(len(rules["mb_boards"]))}
+        gm_skipped = await db.income_events.aggregate([{"$match": {"kind": "gm_skipped"}},
+                                                       {"$group": {"_id": None, "n": {"$sum": 1}, "usd": {"$sum": "$usd"}}}]).to_list(1)
+        lp = await db.income_events.aggregate([{"$match": {"kind": "mb_entry"}},
+                                               {"$group": {"_id": None, "lp": {"$sum": "$lp_treasury"}, "un": {"$sum": "$unassigned"}}}]).to_list(1)
+        recent = await db.transactions.find({"type": {"$in": list(totals)}}).sort("created_at", -1).to_list(50)
+        return {"rules": rules, "defaults": d.INCOME_DEFAULTS, "totals": totals, "board_members": boards,
+                "gm_skipped": {"count": gm_skipped[0]["n"] if gm_skipped else 0, "usd": gm_skipped[0]["usd"] if gm_skipped else 0},
+                "lp_treasury_usd": round(lp[0]["lp"], 2) if lp else 0, "unassigned_usd": round(lp[0]["un"], 2) if lp else 0,
+                "recent": [{"id": t["_id"], "address": t["address"], "type": t["type"], "merq": t["amount"],
+                            "usd": (t.get("meta") or {}).get("usd"), "board": (t.get("meta") or {}).get("board"),
+                            "level": (t.get("meta") or {}).get("level"), "created_at": t["created_at"]} for t in recent]}
+
+    @r.put("/income-rules")
+    async def income_rules_put(payload: dict, request: Request, au: dict = Depends(require("settings", write=True))):
+        cur = await d.income_rules()
+        try:
+            new = {
+                "partner_onboarding_pct": float(payload.get("partner_onboarding_pct", cur["partner_onboarding_pct"])),
+                "gm_levels": int(payload.get("gm_levels", cur["gm_levels"])),
+                "gm_amount_per_level": float(payload.get("gm_amount_per_level", cur["gm_amount_per_level"])),
+                "gm_min_directs": int(payload.get("gm_min_directs", cur["gm_min_directs"])),
+                "mb_boards": [{"levels": [float(x) for x in b["levels"]], "net_profit": float(b["net_profit"]),
+                               "upgrade_save": float(b["upgrade_save"])} for b in payload.get("mb_boards", cur["mb_boards"])],
+            }
+        except (TypeError, ValueError, KeyError):
+            raise HTTPException(400, "All amounts must be numbers")
+        if not 0 <= new["partner_onboarding_pct"] <= 100:
+            raise HTTPException(400, "Partner Onboarding % must be between 0 and 100")
+        if not 1 <= new["gm_levels"] <= 30 or new["gm_amount_per_level"] < 0 or new["gm_min_directs"] < 0:
+            raise HTTPException(400, "Global Momentum: levels 1-30, amounts not negative")
+        if len(new["mb_boards"]) != 8 or any(len(b["levels"]) != 5 or min(b["levels"] + [b["net_profit"], b["upgrade_save"]]) < 0
+                                             for b in new["mb_boards"]):
+            raise HTTPException(400, "Each of the 8 MB boards needs 5 level amounts, none negative")
+        await db.settings.update_one({"_id": "global"}, {"$set": {"income_rules": new}})
+        await audit(au, "update_income_rules", "settings", None, {"partner_onboarding_pct": new["partner_onboarding_pct"]}, request)
+        return {"ok": True, "rules": new}
+
     # ------------------------- entry / unity ports -------------------------
     @r.get("/ports/{port}")
     async def ports_report(port: str, au: dict = Depends(require("deposits")), status: Optional[str] = None, q: Optional[str] = None):

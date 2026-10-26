@@ -25,6 +25,7 @@ const NAV = [
   { group: "Finance", items: [
     { to: "techpass", label: "TechPass Sales", icon: Ticket, mod: "deposits" },
     { to: "ports", label: "Entry & Unity Ports", icon: DoorOpen, mod: "deposits" },
+    { to: "income-rules", label: "TechPass Income Rules", icon: Ticket, mod: "settings" },
     { to: "deposits", label: "Deposits", icon: ArrowDownToLine, mod: "deposits" },
     { to: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, mod: "withdrawals" },
     { to: "income", label: "Income", icon: Landmark, mod: "income" },
