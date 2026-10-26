@@ -499,6 +499,7 @@ class DepositReq(BaseModel):
 
 @api.post("/deposit")
 async def deposit(req: DepositReq, m: dict = Depends(current_member)):
+    raise HTTPException(410, "This income plan has been retired")
     settings = await get_settings()
     if settings.get("paused") or settings.get("emergency", {}).get("pause_deposits"):
         raise HTTPException(400, "Deposits are currently paused")
@@ -562,6 +563,7 @@ async def growth_positions(m: dict = Depends(current_member)):
 
 @api.post("/growth/claim")
 async def growth_claim(m: dict = Depends(current_member)):
+    raise HTTPException(410, "This income plan has been retired")
     settings = await get_settings()
     positions = await db.positions.find({"owner": m["_id"], "status": "active"}).to_list(1000)
     total = 0.0
@@ -613,6 +615,7 @@ class ClaimReq(BaseModel):
 
 @api.post("/rewards/claim")
 async def rewards_claim(req: ClaimReq, m: dict = Depends(current_member)):
+    raise HTTPException(410, "This income plan has been retired")
     settings = await get_settings()
     tier = next((t for t in settings.get("reward_tiers", []) if t["key"] == req.key), None)
     if not tier:
@@ -652,6 +655,7 @@ async def autopool_status(m: dict = Depends(current_member)):
 
 @api.post("/autopool/enter")
 async def autopool_enter(m: dict = Depends(current_member)):
+    raise HTTPException(410, "This income plan has been retired")
     settings = await get_settings()
     if settings.get("paused") or settings.get("emergency", {}).get("pause_autopool"):
         raise HTTPException(400, "Autopool is currently paused")
@@ -727,6 +731,14 @@ async def income_stream(key: str, m: dict = Depends(current_member)):
                          "bscscan_url": BSCSCAN_BASE + t["tx_hash"] if t.get("tx_hash") else None,
                          "created_at": t["created_at"]} for t in txs]}
 
+
+
+@api.get("/income/tree/{board}")
+async def income_tree(board: str, root: Optional[str] = None, m: dict = Depends(current_member)):
+    board = board.upper()
+    if board not in [f"MB{i}" for i in range(1, 9)] + ["GM"]:
+        raise HTTPException(404, "Unknown board")
+    return await _admin_deps.matrix_tree(board, m["_id"], (root or m["_id"]).lower(), 4 if board == "GM" else 5)
 
 
 @api.get("/income/history")

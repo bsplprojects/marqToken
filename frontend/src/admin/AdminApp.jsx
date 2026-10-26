@@ -11,12 +11,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Ranks from "./pages/Ranks";
 import Deposits from "./pages/Deposits";
 import Withdrawals from "./pages/Withdrawals";
-import Income from "./pages/Income";
 import Reconciliation from "./pages/Reconciliation";
-import Growth from "./pages/Growth";
-import Commission from "./pages/Commission";
-import Rewards from "./pages/Rewards";
-import Autopool from "./pages/Autopool";
 import Token from "./pages/Token";
 import Treasury from "./pages/Treasury";
 import Liquidity from "./pages/Liquidity";
@@ -52,12 +47,7 @@ function Shell() {
         <Route path="ranks" element={<Ranks />} />
         <Route path="deposits" element={<Deposits />} />
         <Route path="withdrawals" element={<Withdrawals />} />
-        <Route path="income" element={<Income />} />
         <Route path="reconciliation" element={<Reconciliation />} />
-        <Route path="growth" element={<Growth />} />
-        <Route path="commission" element={<Commission />} />
-        <Route path="rewards" element={<Rewards />} />
-        <Route path="autopool" element={<Autopool />} />
         <Route path="token" element={<Token />} />
         <Route path="treasury" element={<Treasury />} />
         <Route path="liquidity" element={<Liquidity />} />

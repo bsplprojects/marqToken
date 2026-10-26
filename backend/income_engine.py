@@ -171,11 +171,41 @@ def build_income_engine(d):
                         "upgraded": st.get("upgraded", False), "levels": cfg["levels"]})
         return out
 
+    async def matrix_tree(board: str, me: str, root: str, depth: int = 4):
+        """Subtree of `root` (must be me or inside my subtree) in board, `depth` levels below root."""
+        cur, ok = root, root == me
+        for _ in range(40):
+            if ok:
+                break
+            node = await db.matrix.find_one({"_id": f"{board}:{cur}"}, {"parent": 1})
+            if not node or not node.get("parent"):
+                break
+            cur = node["parent"]
+            ok = cur == me
+        if not ok:
+            root = me
+
+        async def build(addr, lvl):
+            node = await db.matrix.find_one({"_id": f"{board}:{addr}"})
+            if not node:
+                return None
+            m = await db.members.find_one({"_id": addr}, {"address": 1, "sponsor": 1})
+            kids = [await build(c, lvl + 1) for c in node["children"]] if lvl < depth else []
+            return {"address": m["address"] if m else addr, "short": f"{addr[:6]}…{addr[-4:]}", "level": lvl,
+                    "direct": bool(m and m.get("sponsor") == me), "joined_at": node["created_at"],
+                    "has_more": lvl >= depth and bool(node["children"]), "children": [k for k in kids if k]}
+
+        tree = await build(root, 0)
+        count = await db.matrix.count_documents({"board": board})
+        return {"board": board, "root": root, "is_self": root == me, "joined": tree is not None,
+                "tree": tree, "board_members": count, "depth": depth}
+
     async def backfill():
         for tp in await db.techpass.find({"status": "confirmed", "income_processed": {"$ne": True}}).sort("created_at", 1).to_list(100000):
             await process_techpass(tp)
 
     d.income_rules = rules
+    d.matrix_tree = matrix_tree
     d.income_backfill = backfill
     d.process_techpass_income = process_techpass
     d.member_mb = member_mb

@@ -4,8 +4,8 @@ import { useAdminAuth } from "./AdminAuth";
 import { shortAddr } from "@/lib/format";
 import BrandLogo from "@/components/BrandLogo";
 import {
-  LayoutDashboard, Users, Network, Trophy, Medal, Landmark, ArrowDownToLine,
-  ArrowUpFromLine, TrendingUp, GitMerge, Coins, Gift, Layers, Boxes, Banknote,
+  LayoutDashboard, Users, Network, Trophy, Medal, ArrowDownToLine,
+  ArrowUpFromLine, Coins, Boxes, Banknote,
   Droplets, SlidersHorizontal, FileBarChart, Scale, Bell, Headphones, UserCog,
   ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, ArrowLeftRight, Ticket, DoorOpen,
 } from "lucide-react";
@@ -28,14 +28,7 @@ const NAV = [
     { to: "income-rules", label: "TechPass Income Rules", icon: Ticket, mod: "settings" },
     { to: "deposits", label: "Deposits", icon: ArrowDownToLine, mod: "deposits" },
     { to: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, mod: "withdrawals" },
-    { to: "income", label: "Income", icon: Landmark, mod: "income" },
     { to: "reconciliation", label: "Reconciliation", icon: Scale, mod: "reconciliation" },
-  ]},
-  { group: "Earnings Engine", items: [
-    { to: "growth", label: "Profit Growth", icon: TrendingUp, mod: "growth" },
-    { to: "commission", label: "Commission", icon: GitMerge, mod: "commission" },
-    { to: "rewards", label: "Rewards", icon: Gift, mod: "rewards" },
-    { to: "autopool", label: "Autopool", icon: Layers, mod: "autopool" },
   ]},
   { group: "Blockchain", items: [
     { to: "token", label: "Token & Chain", icon: Coins, mod: "token" },
