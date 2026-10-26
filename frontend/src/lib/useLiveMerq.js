@@ -23,6 +23,11 @@ export function useLiveMerq(address) {
     queryFn: () => tokenBalance(p.rpc_url, p.usdt_token_address, address),
     enabled: !!(address && p?.usdt_token_address), refetchInterval: 20000,
   });
+  const bnb = useQuery({
+    queryKey: ["bnb-balance", address],
+    queryFn: async () => Number(formatUnits(await new JsonRpcProvider(p.rpc_url).getBalance(address), 18)),
+    enabled: !!(address && p?.rpc_url), refetchInterval: 20000,
+  });
   const live = !!p?.token_address;
   const balance = merq.data ?? null;
   return {
@@ -30,5 +35,6 @@ export function useLiveMerq(address) {
     balance, usd: balance !== null ? balance * (p?.merq_price ?? 0) : null,
     loading: !p || (live && merq.isLoading), error: merq.isError,
     usdt: usdt.data ?? null, usdtError: usdt.isError,
+    bnb: bnb.data ?? null, bnbError: bnb.isError,
   };
 }

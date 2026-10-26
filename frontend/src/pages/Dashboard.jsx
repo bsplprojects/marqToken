@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { fmt, fmtUSD, shortAddr } from "@/lib/format";
+import { fmt, shortAddr } from "@/lib/format";
 import { INCOME_GROUPS } from "@/lib/incomes";
 import { useLiveMerq } from "@/lib/useLiveMerq";
 import BrandLogo from "@/components/BrandLogo";
-import { UsdtLogo } from "@/components/UsdtLogo";
+import { UsdtLogo, BnbLogo, TokenChip } from "@/components/UsdtLogo";
 import { PageHeader } from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { TechPassCard } from "@/components/techpass/TechPassCard";
@@ -73,25 +73,13 @@ export default function Dashboard() {
               </span>
               <span className="font-mono-merq text-xl text-slate-500 self-end mb-1">MERQ</span>
             </div>
-            <div className="font-mono-merq text-slate-400 mt-2" data-testid="fiat-value-display">
-              {!liveMerq.live ? (
-                <span className="text-slate-500 text-sm">MERQ not live yet · balance will show from your wallet once the token launches</span>
-              ) : liveMerq.error ? (
-                <span className="text-rose-400 text-sm">Couldn't read your wallet balance, retrying…</span>
-              ) : (
-                <>≈ {fmtUSD(liveMerq.usd ?? 0)} <span className="text-slate-600 text-xs">· @ ${Number(liveMerq.price).toFixed(6)}/MERQ · {liveMerq.source === "pancakeswap_pool" ? "live pool" : "admin price"}</span></>
-              )}
-            </div>
-            <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-600 mt-1">Live from connected wallet {shortAddr(member?.address)}</div>
+            <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-600 mt-2">Live from connected wallet {shortAddr(member?.address)}</div>
 
-            <div data-testid="usdt-balance-display" className="mt-6 inline-flex items-center gap-3 rounded-2xl border border-emerald-400/15 bg-emerald-400/5 px-4 py-3">
-              <UsdtLogo size={36} />
-              <div>
-                <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">USDT Balance</div>
-                <div className="font-mono-merq text-xl font-bold text-white">
-                  {liveMerq.usdtError ? "Unavailable" : liveMerq.usdt === null ? "…" : fmt(liveMerq.usdt, 2)} <span className="text-sm text-slate-500">USDT</span>
-                </div>
-              </div>
+            <div className="flex flex-wrap gap-3 mt-6">
+              <TokenChip testid="usdt-balance-display" logo={<UsdtLogo size={36} />} label="USDT Balance" symbol="USDT"
+                value={liveMerq.usdtError ? "Unavailable" : liveMerq.usdt === null ? "…" : fmt(liveMerq.usdt, 2)} tone="border-emerald-400/15 bg-emerald-400/5" />
+              <TokenChip testid="bnb-balance-display" logo={<BnbLogo size={36} />} label="BNB Balance" symbol="BNB"
+                value={liveMerq.bnbError ? "Unavailable" : liveMerq.bnb === null ? "…" : fmt(liveMerq.bnb, 4)} tone="border-amber-400/15 bg-amber-400/5" />
             </div>
 
             <div className="flex flex-wrap gap-3 mt-8">
