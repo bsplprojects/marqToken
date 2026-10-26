@@ -115,6 +115,10 @@ def build_income_engine(d):
         if ready:
             st["upgraded"] = True
         await db.mb_state.replace_one({"_id": sid}, st, upsert=True)
+        if ready:
+            await db.celebrations.insert_one({"_id": secrets.token_hex(12), "member": addr, "kind": "mb_upgrade",
+                                              "title": f"MB{b + 2}", "from_board": f"MB{b + 1}", "seen": False,
+                                              "created_at": d.iso(d.now_utc())})
         if ready and depth < 10:
             await mb_enter(addr, b + 1, r, price, funded=st["saved"], depth=depth + 1)
 

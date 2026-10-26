@@ -5,6 +5,7 @@ import { fmt } from "@/lib/format";
 import { findStream } from "@/lib/incomes";
 import { PageHeader } from "@/components/PageHeader";
 import { MbBoards } from "@/components/MbBoards";
+import { PortIncomeInfo } from "@/components/PortIncomeInfo";
 import { Clock, ExternalLink } from "lucide-react";
 
 export default function IncomeStream() {
@@ -45,7 +46,7 @@ export default function IncomeStream() {
                 <div key={h.id} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-4 py-3">
                   <span className="font-mono-merq text-emerald-400 font-semibold">+{fmt(h.amount)} MERQ</span>
                   {h.usd != null && <span className="font-mono-merq text-xs text-slate-300">${fmt(h.usd)}</span>}
-                  {(h.board || h.level) && <span className="rounded-full border border-amber-400/25 px-2 py-0.5 font-mono-merq text-[10px] text-amber-300">{h.board || `Level ${h.level}`}</span>}
+                  {(h.board || h.level || h.rank || h.port) && <span className="rounded-full border border-amber-400/25 px-2 py-0.5 font-mono-merq text-[10px] uppercase text-amber-300">{h.board || h.rank || (h.level ? `Level ${h.level}` : `${h.port} port`)}</span>}
                   {h.from && <span className="font-mono-merq text-[11px] text-slate-500">from {h.from.slice(0, 6)}…{h.from.slice(-4)}</span>}
                   <span className="ml-auto font-mono-merq text-[11px] text-slate-500">{new Date(h.created_at).toLocaleString()}</span>
                   {h.bscscan_url && <a href={h.bscscan_url} target="_blank" rel="noreferrer" className="text-amber-400"><ExternalLink className="h-4 w-4" /></a>}
@@ -56,6 +57,7 @@ export default function IncomeStream() {
         </div>
       </div>
       {data?.boards && <MbBoards boards={data.boards} />}
+      {data?.port_info && <PortIncomeInfo info={data.port_info} stream={item.key} />}
     </div>
   );
 }

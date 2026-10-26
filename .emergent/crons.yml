@@ -1,0 +1,8 @@
+crons:
+  - name: port-accrual
+    description: "Credits Entry/Unity Port daily earnings and Level Income every hour as purchases complete each day"
+    cron: "0 * * * *"
+    endpoint: "{{BASE_URL}}/api/cron/port-accrual"
+    method: POST
+    # Cron endpoints must ack 2xx immediately; enqueue/background the actual work.
+    enabled: true

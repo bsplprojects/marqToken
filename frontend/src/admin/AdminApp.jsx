@@ -28,6 +28,8 @@ import SwapSettings from "./pages/SwapSettings";
 import TechPassReport from "./pages/TechPassReport";
 import PortsReport from "./pages/PortsReport";
 import IncomeRules from "./pages/IncomeRules";
+import PortIncomeRules from "./pages/PortIncomeRules";
+import IncomeReports from "./pages/IncomeReports";
 
 function Shell() {
   const { admin, loading } = useAdminAuth();
@@ -64,6 +66,8 @@ function Shell() {
         <Route path="techpass" element={<TechPassReport />} />
         <Route path="ports" element={<PortsReport />} />
         <Route path="income-rules" element={<IncomeRules />} />
+        <Route path="port-income-rules" element={<PortIncomeRules />} />
+        <Route path="income-reports" element={<IncomeReports />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </AdminLayout>

@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Network, Trophy, Medal, ArrowDownToLine,
   ArrowUpFromLine, Coins, Boxes, Banknote,
   Droplets, SlidersHorizontal, FileBarChart, Scale, Bell, Headphones, UserCog,
-  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, ArrowLeftRight, Ticket, DoorOpen,
+  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, ArrowLeftRight, Ticket, DoorOpen, Percent, BarChart3,
 } from "lucide-react";
 
 const NAV = [
@@ -26,6 +26,8 @@ const NAV = [
     { to: "techpass", label: "TechPass Sales", icon: Ticket, mod: "deposits" },
     { to: "ports", label: "Entry & Unity Ports", icon: DoorOpen, mod: "deposits" },
     { to: "income-rules", label: "TechPass Income Rules", icon: Ticket, mod: "settings" },
+    { to: "port-income-rules", label: "Port Income Rules", icon: Percent, mod: "settings" },
+    { to: "income-reports", label: "Income Reports", icon: BarChart3, mod: "reports" },
     { to: "deposits", label: "Deposits", icon: ArrowDownToLine, mod: "deposits" },
     { to: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, mod: "withdrawals" },
     { to: "reconciliation", label: "Reconciliation", icon: Scale, mod: "reconciliation" },

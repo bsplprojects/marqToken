@@ -1,4 +1,4 @@
-import { Ticket, UserPlus, Rocket, Globe2, DoorOpen, Gift, Layers3, Crown } from "lucide-react";
+import { Ticket, UserPlus, Rocket, Globe2, DoorOpen, Gift, Layers3, Crown, TrendingUp } from "lucide-react";
 
 export const INCOME_GROUPS = [
   {
@@ -15,12 +15,14 @@ export const INCOME_GROUPS = [
   {
     key: "port", label: "Merq Entry & Unity Port", icon: DoorOpen,
     items: [
+      { key: "port_daily_earnings", slug: "port-daily-earnings", label: "Daily Earnings", icon: TrendingUp, accent: "emerald",
+        desc: "Daily earnings on your Entry Port (0.30%/day) and Unity Port (0.50%–1%/day) purchases." },
       { key: "port_partner_onboarding_rewards", slug: "port-partner-onboarding-rewards", label: "Partner Onboarding Rewards", icon: Gift, accent: "violet",
-        desc: "Rewards for partners you onboard into Merq Entry Port and Unity Port." },
+        desc: "5% instant reward when a partner you sponsor buys a Unity Port (Bond)." },
       { key: "port_level_income", slug: "port-level-income", label: "Level Income", icon: Layers3, accent: "rose",
-        desc: "Income earned from activity across the levels of your team." },
+        desc: "A share of your team's daily port earnings across 8 levels (25% down to 1%)." },
       { key: "port_rank_rewards", slug: "port-rank-rewards", label: "Rank & Rewards", icon: Crown, accent: "amber",
-        desc: "Rewards unlocked as you reach new ranks." },
+        desc: "One-time bonus each time you reach a new rank, M1 to M7." },
     ],
   },
 ];

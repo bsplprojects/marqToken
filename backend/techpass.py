@@ -100,6 +100,8 @@ def build_techpass(d):
             p.update(upd)
             if coll == "techpass" and st == "confirmed":
                 await d.process_techpass_income(p)
+            if coll == "port_purchases" and st == "confirmed":
+                await d.process_port_income(p)
         return p
 
     def public(p):

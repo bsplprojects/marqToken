@@ -43,7 +43,11 @@ def build_ports(d):
                 "amount_usd": p["amount_usd"], "merq_amount": p["merq_amount"], "merq_price": p["merq_price"],
                 "price_source": p["price_source"], "tx_hash": p["tx_hash"], "status": p["status"],
                 "receive_wallet": p["receive_wallet"], "created_at": p["created_at"], "verified_at": p.get("verified_at"),
-                "bscscan_url": f"{d.BSCSCAN_BASE}{p['tx_hash']}"}
+                "bscscan_url": f"{d.BSCSCAN_BASE}{p['tx_hash']}", "daily_pct": p.get("daily_pct"),
+                "earned_usd": round(p.get("earned_usd", 0.0), 4), "lock_until": p.get("lock_until"),
+                "principal_status": p.get("principal_status"),
+                "can_withdraw_principal": p.get("principal_status") == "active" and
+                (not p.get("lock_until") or d.parse_iso(p["lock_until"]) <= d.now_utc())}
 
     async def has_techpass(addr):
         return bool(await db.techpass.find_one({"address": addr, "status": "confirmed"}))
@@ -72,12 +76,14 @@ def build_ports(d):
         for k in PORTS:
             conf = [p for p in docs if p["port"] == k and p["status"] == "confirmed"]
             totals[k] = {"count": len(conf), "usd": round(sum(p["amount_usd"] for p in conf), 2),
+                         "earned_usd": round(sum(p.get("earned_usd", 0.0) for p in conf), 4),
                          "merq": round(sum(p["merq_amount"] for p in conf), 6),
                          "pending": sum(1 for p in docs if p["port"] == k and p["status"] == "pending")}
         return {"techpass_active": await has_techpass(m["_id"]), "merq_live": bool(swap.get("merq_token_address")),
                 "merq_price": price, "price_source": source, "decimals": dec,
                 "token_address": swap.get("merq_token_address"), "rpc_url": swap["rpc_url"],
                 "ports": {k: {"name": PORTS[k], **cfg[k]} for k in PORTS}, "totals": totals,
+                "rates": {k: (await d.port_income_rules())[k] for k in ("entry_daily_pct", "unity_tiers", "unity_lock_days", "sponsor_pct")},
                 "history": [public(p) for p in docs]}
 
     @r.post("/{port}/quote")
@@ -129,6 +135,9 @@ def build_ports(d):
                "verified_at": d.iso(d.now_utc()) if st == "confirmed" else None}
         await db.port_purchases.insert_one(doc)
         await db.port_quotes.delete_one({"_id": q["_id"]})
+        if st == "confirmed":
+            await d.process_port_income(doc)
+            doc = await db.port_purchases.find_one({"_id": doc["_id"]})
         return public(doc)
 
     async def report(port: str, status: Optional[str], q: Optional[str]):

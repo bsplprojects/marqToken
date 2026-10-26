@@ -111,7 +111,7 @@ export default function Dashboard() {
           <h2 className="font-display text-xl font-bold text-white mt-10 mb-4 flex items-center gap-2">
             <g.icon className="h-5 w-5 text-amber-400" /> {g.label}
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${g.items.length > 3 ? "xl:grid-cols-4" : "lg:grid-cols-3"} gap-4`}>
             {g.items.map((c) => (
               <button key={c.key} onClick={() => navigate(`/income/${c.slug}`)} className="text-left">
                 <StatCard testid={`income-card-${c.key}`} label={c.label} value={fmt(streams?.[c.key] ?? 0)} sub="MERQ" icon={c.icon} accent={c.accent} />

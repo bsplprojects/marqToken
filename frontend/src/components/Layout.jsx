@@ -5,6 +5,7 @@ import { shortAddr } from "@/lib/format";
 import { toast } from "sonner";
 import BrandLogo from "@/components/BrandLogo";
 import { IncomeNav } from "@/components/IncomeNav";
+import { CelebrationBanner } from "@/components/CelebrationBanner";
 import {
   LayoutDashboard, Network as NetworkIcon,
   ReceiptText, User, Settings as SettingsIcon,
@@ -141,7 +142,7 @@ export default function Layout({ children }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8"><CelebrationBanner />{children}</main>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 """MerqON Admin Panel — RBAC-gated comprehensive admin API (separate shell)."""
 import asyncio
 import io
+import re
 import csv
 import time
 import secrets
@@ -809,6 +810,102 @@ def build_admin_router(d):
         await db.settings.update_one({"_id": "global"}, {"$set": {"income_rules": new}})
         await audit(au, "update_income_rules", "settings", None, {"partner_onboarding_pct": new["partner_onboarding_pct"]}, request)
         return {"ok": True, "rules": new}
+
+    # ------------------------- port income rules -------------------------
+    @r.get("/port-income-rules")
+    async def port_rules_get(au: dict = Depends(require("settings"))):
+        totals = {}
+        for k in d.PORT_STREAMS:
+            agg = await db.members.aggregate([{"$group": {"_id": None, "usd": {"$sum": f"$income_usd.{k}"},
+                                                          "merq": {"$sum": f"$income.{k}"}}}]).to_list(1)
+            totals[k] = {"usd": round(agg[0]["usd"], 2) if agg else 0, "merq": round(agg[0]["merq"], 4) if agg else 0}
+        skipped = await db.income_events.aggregate([{"$match": {"kind": "level_skipped"}},
+                                                    {"$group": {"_id": None, "usd": {"$sum": "$usd"}}}]).to_list(1)
+        awards = await db.rank_awards.find().sort("created_at", -1).to_list(100)
+        s = await d.get_settings()
+        return {"rules": await d.port_income_rules(), "defaults": d.PORT_INCOME_DEFAULTS, "totals": totals,
+                "level_skipped_usd": round(skipped[0]["usd"], 2) if skipped else 0, "last_accrual": s.get("port_last_accrual"),
+                "active_principal": await db.port_purchases.count_documents({"status": "confirmed", "principal_status": "active"}),
+                "rank_awards": [{"id": a["_id"], "member": a["member"], "rank": a["rank"], "usd": a["usd"],
+                                 "created_at": a["created_at"]} for a in awards]}
+
+    @r.put("/port-income-rules")
+    async def port_rules_put(payload: dict, request: Request, au: dict = Depends(require("settings", write=True))):
+        cur = await d.port_income_rules()
+        try:
+            new = {
+                "entry_daily_pct": float(payload.get("entry_daily_pct", cur["entry_daily_pct"])),
+                "unity_tiers": [{"min_usd": float(t["min_usd"]), "daily_pct": float(t["daily_pct"])} for t in payload.get("unity_tiers", cur["unity_tiers"])],
+                "unity_lock_days": int(payload.get("unity_lock_days", cur["unity_lock_days"])),
+                "sponsor_pct": float(payload.get("sponsor_pct", cur["sponsor_pct"])),
+                "level_pcts": [float(x) for x in payload.get("level_pcts", cur["level_pcts"])],
+                "level_min_self_usd": float(payload.get("level_min_self_usd", cur["level_min_self_usd"])),
+                "ranks": [{"name": str(x["name"]), "leg_usd": float(x["leg_usd"]), "need_rank": int(x["need_rank"]),
+                           "need_count": int(x["need_count"]), "pct": float(x["pct"])} for x in payload.get("ranks", cur["ranks"])],
+            }
+        except (TypeError, ValueError, KeyError):
+            raise HTTPException(400, "All values must be numbers")
+        pcts = [new["entry_daily_pct"], new["sponsor_pct"]] + [t["daily_pct"] for t in new["unity_tiers"]] + new["level_pcts"] + [x["pct"] for x in new["ranks"]]
+        if any(not 0 <= v <= 100 for v in pcts) or new["unity_lock_days"] < 0 or new["level_min_self_usd"] < 0 or not new["unity_tiers"]:
+            raise HTTPException(400, "Percentages must be 0-100 and amounts not negative")
+        if len(new["level_pcts"]) != 8 or len(new["ranks"]) != 7 or any(
+                not 0 <= x["need_rank"] <= i or x["need_count"] < 0 or x["leg_usd"] < 0 for i, x in enumerate(new["ranks"])):
+            raise HTTPException(400, "8 levels and 7 ranks required; a rank can only require a lower rank")
+        await db.settings.update_one({"_id": "global"}, {"$set": {"port_income_rules": new}})
+        await audit(au, "update_port_income_rules", "settings", None, {"entry_daily_pct": new["entry_daily_pct"]}, request)
+        return {"ok": True, "rules": new}
+
+    @r.post("/port-income/accrue")
+    async def port_accrue_now(request: Request, au: dict = Depends(require("settings", write=True))):
+        n = await d.port_accrue()
+        await audit(au, "run_port_accrual", "settings", None, {"credited": n}, request)
+        return {"ok": True, "credited": n}
+
+    # ------------------------- all income reports -------------------------
+    ALL_STREAMS = ["tp_partner_onboarding", "tp_momentum_booster", "tp_global_momentum"] + d.PORT_STREAMS
+
+    def income_filter(stream, q, start, end):
+        flt = {"type": stream if stream in ALL_STREAMS else {"$in": ALL_STREAMS}}
+        if q:
+            flt["address"] = {"$regex": re.escape(q.lower())}
+        if start or end:
+            flt["created_at"] = {k: v for k, v in (("$gte", start), ("$lte", end and end + "T23:59:59")) if v}
+        return flt
+
+    def income_row(t):
+        mt = t.get("meta") or {}
+        return {"id": t["_id"], "address": t["address"], "type": t["type"], "merq": t["amount"], "usd": mt.get("usd"),
+                "from": mt.get("from"), "detail": mt.get("board") or mt.get("rank") or (f"Level {mt['level']}" if mt.get("level") else None)
+                or (f"{mt['port']} · {mt.get('days')}d" if mt.get("port") else None), "created_at": t["created_at"]}
+
+    @r.get("/income-report")
+    async def income_report(au: dict = Depends(require("reports")), stream: Optional[str] = None, q: Optional[str] = None,
+                            start: Optional[str] = None, end: Optional[str] = None, page: int = 1):
+        flt = income_filter(stream, q, start, end)
+        by = {x["_id"]: x for x in await db.transactions.aggregate([{"$match": flt}, {"$group": {
+            "_id": "$type", "n": {"$sum": 1}, "merq": {"$sum": "$amount"}, "usd": {"$sum": "$meta.usd"},
+            "earners": {"$addToSet": "$address"}}}]).to_list(20)}
+        summary = {k: {"count": by[k]["n"] if k in by else 0, "merq": round(by[k]["merq"], 4) if k in by else 0,
+                       "usd": round(by[k]["usd"] or 0, 2) if k in by else 0, "earners": len(by[k]["earners"]) if k in by else 0}
+                   for k in ALL_STREAMS}
+        total = await db.transactions.count_documents(flt)
+        rows = await db.transactions.find(flt).sort("created_at", -1).skip((max(page, 1) - 1) * 50).limit(50).to_list(50)
+        return {"streams": ALL_STREAMS, "summary": summary, "total": total, "page": page, "pages": max(1, -(-total // 50)),
+                "rows": [income_row(t) for t in rows]}
+
+    @r.get("/income-report/export")
+    async def income_export(au: dict = Depends(require("reports")), stream: Optional[str] = None, q: Optional[str] = None,
+                            start: Optional[str] = None, end: Optional[str] = None):
+        docs = await db.transactions.find(income_filter(stream, q, start, end)).sort("created_at", -1).to_list(200000)
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(["id", "wallet", "income", "usd", "merq", "from", "detail", "created_at"])
+        for t in docs:
+            x = income_row(t)
+            w.writerow([x["id"], x["address"], x["type"], x["usd"], x["merq"], x["from"], x["detail"], x["created_at"]])
+        buf.seek(0)
+        return StreamingResponse(iter([buf.getvalue()]), media_type="text/csv",
+                                 headers={"Content-Disposition": "attachment; filename=income-report.csv"})
 
     # ------------------------- entry / unity ports -------------------------
     @r.get("/ports/{port}")

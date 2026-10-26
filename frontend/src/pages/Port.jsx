@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PortBuy } from "@/components/ports/PortBuy";
 import { PortHistory } from "@/components/ports/PortHistory";
 import { SwapNotice } from "@/components/swap/SwapNotice";
+import { PortRates } from "@/components/ports/PortRates";
 import { Ticket, ArrowRight } from "lucide-react";
 
 const TechPassRequired = () => (
@@ -41,17 +42,18 @@ export default function Port() {
     <div>
       <PageHeader eyebrow="Merq Entry & Unity Port" title={port?.name || (key === "entry" ? "Merq Entry Port" : "Merq Unity Port")}
         subtitle="Enter any USDT amount. We convert it to MERQ at the live price and deduct it from your wallet." />
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        {[["Purchases", t?.count ?? 0, "port-total-count"], ["Total value", `$${fmt(t?.usd ?? 0)}`, "port-total-usd"], ["MERQ paid", fmt(t?.merq ?? 0, 4), "port-total-merq"]].map(([l, v, id]) => (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {[["Purchases", t?.count ?? 0, "port-total-count"], ["Total value", `$${fmt(t?.usd ?? 0)}`, "port-total-usd"], ["MERQ paid", fmt(t?.merq ?? 0, 4), "port-total-merq"], ["Daily earnings", `$${fmt(t?.earned_usd ?? 0)}`, "port-total-earned"]].map(([l, v, id]) => (
           <div key={l} className="glass rounded-2xl border border-white/8 p-4">
             <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">{l}</div>
             <div data-testid={id} className="font-mono-merq text-xl font-bold text-white mt-1">{v}</div>
           </div>
         ))}
       </div>
+      {s?.rates && <PortRates portKey={key} rates={s.rates} />}
       <div className="grid xl:grid-cols-5 gap-6">
         <div className="xl:col-span-2">{body()}</div>
-        <div className="xl:col-span-3"><PortHistory rows={(s?.history || []).filter((p) => p.port === key)} /></div>
+        <div className="xl:col-span-3"><PortHistory rows={(s?.history || []).filter((p) => p.port === key)} onChange={() => qc.invalidateQueries({ queryKey: ["ports"] })} /></div>
       </div>
     </div>
   );
