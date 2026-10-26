@@ -63,7 +63,7 @@ export const TechPassBuy = ({ priceUsd, member, onDone }) => {
         </div>
         {quote && (
           <div className="flex flex-wrap justify-between gap-2 mt-3 text-xs font-mono-merq text-slate-400">
-            <span data-testid="techpass-rate">1 MERQ = ${Number(quote.merq_price).toFixed(6)} · {quote.price_source === "pancakeswap_pool" ? "live pool price" : "admin price"}</span>
+            <span data-testid="techpass-rate">1 MERQ = ${Number(quote.merq_price).toFixed(6)}</span>
             <span data-testid="techpass-quote-timer" className={secsLeft < 60 ? "text-rose-400" : ""}>
               {secsLeft ? `Price held ${Math.floor(secsLeft / 60)}:${String(secsLeft % 60).padStart(2, "0")}` : "Price expired"}
             </span>

@@ -5,7 +5,7 @@ export const TechPassDetails = ({ p }) => {
   const confirmed = p.status === "confirmed";
   const rows = [
     ["Pass ID", p.id], ["Paid", `${fmt(p.merq_amount, 6)} MERQ`], ["Value", `$${fmt(p.price_usd)}`],
-    ["MERQ price used", `$${Number(p.merq_price).toFixed(6)} (${p.price_source === "pancakeswap_pool" ? "live pool" : "admin price"})`],
+    ["MERQ price used", `$${Number(p.merq_price).toFixed(6)}`],
     ["Purchased", new Date(p.created_at).toLocaleString()],
   ];
   return (

@@ -79,7 +79,7 @@ export const PortBuy = ({ portKey, port, status, member, onDone }) => {
             <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">MERQ to be deducted (estimate)</div>
             <div data-testid="port-merq-estimate" className="font-mono-merq text-2xl font-black gold-text mt-1">{fmt(estimate, 4)} MERQ</div>
             <div data-testid="port-rate" className="font-mono-merq text-xs text-slate-400 mt-1">
-              1 MERQ = ${Number(status.merq_price).toFixed(6)} · {status.price_source === "pancakeswap_pool" ? "live pool price" : "admin price"}
+              1 MERQ = ${Number(status.merq_price).toFixed(6)}
             </div>
           </div>
         </>
