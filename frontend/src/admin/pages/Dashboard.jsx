@@ -1,6 +1,7 @@
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { useAdminData, AHeader, KCard, Panel, Loading, fmt } from "../ui";
 import { INCOME_META } from "@/lib/format";
+import { TokenRateCard } from "./TokenRateCard";
 
 export default function Dashboard() {
   const { data, isLoading } = useAdminData("adm-dashboard", "/dashboard", { refetchInterval: 30000 });
@@ -27,6 +28,7 @@ export default function Dashboard() {
   return (
     <div>
       <AHeader title="Dashboard" subtitle="Real-time overview of the MerqON ecosystem." testid="admin-dashboard" />
+      <TokenRateCard />
       {groups.map((g) => (
         <div key={g.title} className="mb-5">
           <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500 mb-2">{g.title}</div>

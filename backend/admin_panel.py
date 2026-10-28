@@ -907,6 +907,37 @@ def build_admin_router(d):
         return StreamingResponse(iter([buf.getvalue()]), media_type="text/csv",
                                  headers={"Content-Disposition": "attachment; filename=income-report.csv"})
 
+    # ------------------------- live token rate -------------------------
+    async def rate_info():
+        s, swap = await d.get_settings(), await d.get_swap_config()
+        live, err = None, None
+        if swap.get("merq_token_address"):
+            try:
+                from techpass import pool_price
+                live, _ = await asyncio.to_thread(pool_price, swap)
+                if not live:
+                    err = "No MERQ/USDT or MERQ/BNB pool with liquidity yet"
+            except Exception as e:
+                err = f"Could not read the pool: {e}"
+        else:
+            err = "MERQ token contract is not set"
+        return {"admin_price": s.get("merq_price_usd"), "live_price": live, "error": err,
+                "updated_at": s.get("merq_price_updated_at"), "token_address": swap.get("merq_token_address")}
+
+    @r.get("/token-rate")
+    async def token_rate(au: dict = Depends(require("dashboard"))):
+        return await rate_info()
+
+    @r.post("/token-rate/refresh")
+    async def token_rate_refresh(request: Request, au: dict = Depends(require("settings", write=True))):
+        info = await rate_info()
+        if not info["live_price"]:
+            raise HTTPException(400, info["error"])
+        now = d.iso(d.now_utc())
+        await db.settings.update_one({"_id": "global"}, {"$set": {"merq_price_usd": info["live_price"], "merq_price_updated_at": now}})
+        await audit(au, "refresh_token_rate", "settings", None, {"old": info["admin_price"], "new": info["live_price"]}, request)
+        return {**info, "admin_price": info["live_price"], "updated_at": now}
+
     # ------------------------- entry / unity ports -------------------------
     @r.get("/ports/{port}")
     async def ports_report(port: str, au: dict = Depends(require("deposits")), status: Optional[str] = None, q: Optional[str] = None):

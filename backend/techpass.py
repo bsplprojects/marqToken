@@ -29,22 +29,35 @@ def _addr_arg(a):
     return a.lower().replace("0x", "").rjust(64, "0")
 
 
-def pool_price(swap: dict):
-    """Return (price_usdt_per_merq, merq_decimals) from PancakeSwap pool, or (None, decimals|None)."""
-    url, merq, usdt = swap["rpc_url"], swap["merq_token_address"], swap["usdt_token_address"]
-    merq_dec = int(_call(url, merq, "0x313ce567"), 16)
-    usdt_dec = int(_call(url, usdt, "0x313ce567"), 16)
-    pair_raw = _call(url, swap["factory_address"], "0xe6a43905" + _addr_arg(usdt) + _addr_arg(merq))
-    pair = "0x" + pair_raw[-40:]
+def _pair_price(url, factory, base, quote):
+    """Quote-token amount per 1 base token from a PancakeSwap V2 pair, or None."""
+    pair = "0x" + _call(url, factory, "0xe6a43905" + _addr_arg(base) + _addr_arg(quote))[-40:]
     if int(pair, 16) == 0:
-        return None, merq_dec
+        return None
+    bd, qd = int(_call(url, base, "0x313ce567"), 16), int(_call(url, quote, "0x313ce567"), 16)
     res = _call(url, pair, "0x0902f1ac")[2:]
     r0, r1 = int(res[0:64], 16), int(res[64:128], 16)
     token0 = "0x" + _call(url, pair, "0x0dfe1681")[-40:]
-    ru, rm = (r0, r1) if token0.lower() == usdt.lower() else (r1, r0)
-    if not ru or not rm:
-        return None, merq_dec
-    return (ru / 10 ** usdt_dec) / (rm / 10 ** merq_dec), merq_dec
+    rb, rq = (r0, r1) if token0.lower() == base.lower() else (r1, r0)
+    if not rb or not rq:
+        return None
+    return (rq / 10 ** qd) / (rb / 10 ** bd)
+
+
+WBNB = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+
+
+def pool_price(swap: dict):
+    """Return (usd_per_merq, merq_decimals): MERQ/USDT pool, else MERQ/BNB pool x BNB/USDT pool."""
+    url, merq, usdt, f = swap["rpc_url"], swap["merq_token_address"], swap["usdt_token_address"], swap["factory_address"]
+    merq_dec = int(_call(url, merq, "0x313ce567"), 16)
+    p = _pair_price(url, f, merq, usdt)
+    if p:
+        return p, merq_dec
+    wbnb = swap.get("wbnb_address") or WBNB
+    in_bnb = _pair_price(url, f, merq, wbnb)
+    bnb_usd = _pair_price(url, f, wbnb, usdt) if in_bnb else None
+    return (in_bnb * bnb_usd if in_bnb and bnb_usd else None), merq_dec
 
 
 def verify_transfer(url, tx_hash, token, sender, recipient, min_wei):
