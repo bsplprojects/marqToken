@@ -8,7 +8,7 @@ import { IncomeNav } from "@/components/IncomeNav";
 import { CelebrationBanner } from "@/components/CelebrationBanner";
 import {
   LayoutDashboard, Network as NetworkIcon,
-  ReceiptText, User, Settings as SettingsIcon,
+  User, Settings as SettingsIcon,
   LogOut, Copy, Menu, X, Hexagon, ArrowLeftRight, Ticket, DoorOpen, ArrowUpFromLine, GitFork,
 } from "lucide-react";
 
@@ -20,7 +20,6 @@ const NAV = [
   { to: "/ports/unity", label: "Unity Port", icon: DoorOpen, tid: "nav-port-unity" },
   { to: "/network", label: "My Network", icon: NetworkIcon, tid: "nav-network" },
   { income: true },
-  { to: "/transactions", label: "Transactions", icon: ReceiptText, tid: "nav-transactions" },
   { to: "/withdraw", label: "Withdraw", icon: ArrowUpFromLine, tid: "nav-withdraw" },
   { to: "/swap", label: "Swap", icon: ArrowLeftRight, tid: "nav-swap" },
   { to: "/profile", label: "My Profile", icon: User, tid: "nav-profile" },
