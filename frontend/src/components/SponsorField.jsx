@@ -45,7 +45,7 @@ export const SponsorField = ({ value, onChange, onValid, self }) => {
         data-testid="sponsor-input"
         value={value}
         onChange={(e) => onChange(e.target.value.trim())}
-        placeholder="0x… or https://…/register?ref=0x…"
+        placeholder="0x… or https://merqonai.io/register?ref=0x…"
         className="w-full rounded-xl border border-white/10 bg-white/5 focus:border-amber-400/50 outline-none px-4 py-3 font-mono-merq text-sm text-amber-200 placeholder:text-slate-600 transition-colors"
       />
       {msg && (

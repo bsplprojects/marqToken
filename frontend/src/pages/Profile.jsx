@@ -17,7 +17,7 @@ export default function Profile() {
   const { data: profile } = useQuery({ queryKey: ["profile"], queryFn: async () => (await api.get("/member/profile")).data });
   const { data: positions } = useQuery({ queryKey: ["growth"], queryFn: async () => (await api.get("/growth/positions")).data });
 
-  const refLink = `${window.location.origin}/register?ref=${member?.address}`;
+  const refLink = `https://merqonai.io/register?ref=${member?.address}`;
   const copy = (text, msg) => { navigator.clipboard.writeText(text); toast.success(msg); };
 
   const totalClaimable = (positions || []).reduce((a, p) => a + (p.claimable || 0), 0);

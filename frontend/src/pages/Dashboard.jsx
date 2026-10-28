@@ -28,7 +28,7 @@ export default function Dashboard() {
   const liveMerq = useLiveMerq(member?.address);
 
   const copyRef = () => {
-    const link = `${window.location.origin}/register?ref=${member?.address}`;
+    const link = `https://merqonai.io/register?ref=${member?.address}`;
     navigator.clipboard.writeText(link);
     toast.success("Referral link copied");
   };
