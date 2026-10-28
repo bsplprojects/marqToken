@@ -7,7 +7,6 @@ import { PageHeader } from "@/components/PageHeader";
 import { PortBuy } from "@/components/ports/PortBuy";
 import { PortHistory } from "@/components/ports/PortHistory";
 import { SwapNotice } from "@/components/swap/SwapNotice";
-import { PortRates } from "@/components/ports/PortRates";
 import { Ticket, ArrowRight } from "lucide-react";
 
 const TechPassRequired = () => (
@@ -50,7 +49,6 @@ export default function Port() {
           </div>
         ))}
       </div>
-      {s?.rates && key !== "unity" && <PortRates portKey={key} rates={s.rates} />}
       <div className="grid xl:grid-cols-5 gap-6">
         <div className="xl:col-span-2">{body()}</div>
         <div className="xl:col-span-3"><PortHistory rows={(s?.history || []).filter((p) => p.port === key)} onChange={() => qc.invalidateQueries({ queryKey: ["ports"] })} /></div>
