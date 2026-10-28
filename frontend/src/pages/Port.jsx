@@ -50,7 +50,7 @@ export default function Port() {
           </div>
         ))}
       </div>
-      {s?.rates && <PortRates portKey={key} rates={s.rates} />}
+      {s?.rates && key !== "unity" && <PortRates portKey={key} rates={s.rates} />}
       <div className="grid xl:grid-cols-5 gap-6">
         <div className="xl:col-span-2">{body()}</div>
         <div className="xl:col-span-3"><PortHistory rows={(s?.history || []).filter((p) => p.port === key)} onChange={() => qc.invalidateQueries({ queryKey: ["ports"] })} /></div>
