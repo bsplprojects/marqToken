@@ -4,10 +4,10 @@ import { useAdminAuth } from "./AdminAuth";
 import { shortAddr } from "@/lib/format";
 import BrandLogo from "@/components/BrandLogo";
 import {
-  LayoutDashboard, Users, Network, Trophy, Medal, ArrowDownToLine,
-  ArrowUpFromLine, Coins, Boxes, Banknote,
-  Droplets, SlidersHorizontal, FileBarChart, Scale, Bell, Headphones, UserCog,
-  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, ArrowLeftRight, Ticket, DoorOpen, Percent, BarChart3,
+  LayoutDashboard, Users, Network, Trophy, ArrowDownToLine,
+  ArrowUpFromLine, Boxes,
+  SlidersHorizontal, FileBarChart, Bell, Headphones, UserCog,
+  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, Ticket, DoorOpen, Percent, BarChart3,
 } from "lucide-react";
 
 const NAV = [
@@ -20,7 +20,6 @@ const NAV = [
   { group: "MLM Network", items: [
     { to: "network", label: "Network Trees", icon: Network, mod: "mlm" },
     { to: "leaderboard", label: "Leaderboard", icon: Trophy, mod: "mlm" },
-    { to: "ranks", label: "Rank Management", icon: Medal, mod: "ranks" },
   ]},
   { group: "Finance", items: [
     { to: "techpass", label: "TechPass Sales", icon: Ticket, mod: "deposits" },
@@ -30,13 +29,6 @@ const NAV = [
     { to: "income-reports", label: "Income Reports", icon: BarChart3, mod: "reports" },
     { to: "deposits", label: "Deposits", icon: ArrowDownToLine, mod: "deposits" },
     { to: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, mod: "withdrawals" },
-    { to: "reconciliation", label: "Reconciliation", icon: Scale, mod: "reconciliation" },
-  ]},
-  { group: "Blockchain", items: [
-    { to: "token", label: "Token & Chain", icon: Coins, mod: "token" },
-    { to: "swap", label: "Swap Settings", icon: ArrowLeftRight, mod: "token" },
-    { to: "treasury", label: "Treasury", icon: Banknote, mod: "treasury" },
-    { to: "liquidity", label: "Liquidity", icon: Droplets, mod: "liquidity" },
   ]},
   { group: "Control", items: [
     { to: "rules", label: "Business Rules", icon: SlidersHorizontal, mod: "rules" },
