@@ -42,7 +42,7 @@ export default function Swap() {
 
   return (
     <div>
-      <PageHeader eyebrow="On-chain · PancakeSwap" title="Swap" subtitle="Swap USDT and MERQ directly from your wallet on BNB Smart Chain." />
+      <PageHeader eyebrow="On-chain · PancakeSwap" title="Swap" subtitle="Swap BNB and MERQ directly from your wallet on BNB Smart Chain." />
       <div className="grid xl:grid-cols-5 gap-6">
         <div className="xl:col-span-2">
           {state === "ready" ? (

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { ArrowDownUp, Loader2, Settings2 } from "lucide-react";
-import { parseAmount, quoteOut, toBps, fmtUnits, executeSwap } from "@/lib/swap";
+import { parseAmount, quoteOut, toBps, fmtUnits, executeSwap, GAS_RESERVE } from "@/lib/swap";
 import { formatUnits } from "ethers";
 
 const STEP_LABEL = { fee: "Sending platform fee…", approve: "Approving token…", swap: "Confirm swap in wallet…", confirm: "Waiting for confirmation…" };
@@ -26,21 +26,22 @@ const TokenBox = ({ label, symbol, value, onChange, balance, onMax, readOnly, te
 );
 
 export const SwapForm = ({ cfg, market, balances, member, onDone }) => {
-  const [direction, setDirection] = useState("USDT_TO_MERQ");
+  const [direction, setDirection] = useState("BNB_TO_MERQ");
   const [amount, setAmount] = useState("");
   const [slippage, setSlippage] = useState(cfg.default_slippage_pct);
   const [out, setOut] = useState(0n);
   const [step, setStep] = useState(null);
-  const buying = direction === "USDT_TO_MERQ";
-  const [inSym, outSym] = buying ? ["USDT", "MERQ"] : ["MERQ", "USDT"];
-  const decIn = buying ? market.dec.usdt : market.dec.merq;
-  const decOut = buying ? market.dec.merq : market.dec.usdt;
+  const buying = direction === "BNB_TO_MERQ";
+  const [inSym, outSym] = buying ? ["BNB", "MERQ"] : ["MERQ", "BNB"];
+  const decIn = buying ? market.dec.bnb : market.dec.merq;
+  const decOut = buying ? market.dec.merq : market.dec.bnb;
   const amountWei = parseAmount(amount, decIn);
   const feeWei = cfg.fee_wallet ? (amountWei * toBps(cfg.fee_pct)) / 10000n : 0n;
   const netWei = amountWei - feeWei;
   const minOut = (out * (10000n - toBps(slippage))) / 10000n;
-  const balIn = balances ? (buying ? balances.usdt : balances.merq) : null;
-  const balOut = balances ? (buying ? balances.merq : balances.usdt) : null;
+  const balIn = balances ? (buying ? balances.bnb : balances.merq) : null;
+  const balOut = balances ? (buying ? balances.merq : balances.bnb) : null;
+  const maxIn = balIn === null ? null : buying ? (balIn > GAS_RESERVE ? balIn - GAS_RESERVE : 0n) : balIn;
   const insufficient = balIn !== null && amountWei > balIn;
 
   useEffect(() => {
@@ -52,7 +53,7 @@ export const SwapForm = ({ cfg, market, balances, member, onDone }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [amount, direction]);
 
-  const flip = () => { setDirection(buying ? "MERQ_TO_USDT" : "USDT_TO_MERQ"); setAmount(""); };
+  const flip = () => { setDirection(buying ? "MERQ_TO_BNB" : "BNB_TO_MERQ"); setAmount(""); };
 
   const submit = async () => {
     try {
@@ -85,7 +86,7 @@ export const SwapForm = ({ cfg, market, balances, member, onDone }) => {
         </div>
       </div>
       <TokenBox label="You pay" symbol={inSym} value={amount} onChange={setAmount} testid="swap-from"
-        balance={balIn !== null ? fmtUnits(balIn, decIn, 4) : null} onMax={balIn ? () => setAmount(formatUnits(balIn, decIn)) : null} />
+        balance={balIn !== null ? fmtUnits(balIn, decIn, 4) : null} onMax={maxIn ? () => setAmount(formatUnits(maxIn, decIn)) : null} />
       <div className="flex justify-center -my-3 relative z-10">
         <button data-testid="swap-flip" onClick={flip} className="h-10 w-10 rounded-xl border border-amber-400/30 bg-slate-950 text-amber-400 hover:rotate-180 transition-transform duration-300 flex items-center justify-center">
           <ArrowDownUp className="h-4 w-4" />

@@ -14,7 +14,7 @@ export const SwapHistory = () => {
       ) : (
         <div className="space-y-2">
           {data.map((s) => {
-            const [a, b] = s.direction === "USDT_TO_MERQ" ? ["USDT", "MERQ"] : ["MERQ", "USDT"];
+            const [a, b] = s.direction.split("_TO_");
             return (
               <div key={s.tx_hash} data-testid="swap-history-row" className="flex flex-wrap items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-4 py-3">
                 <div className="flex items-center gap-2 text-sm text-white font-medium">

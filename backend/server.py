@@ -84,6 +84,7 @@ DEFAULT_SETTINGS = {
         "enabled": True,
         "merq_token_address": "",
         "usdt_token_address": "0x55d398326f99059fF775485246999027B3197955",
+        "wbnb_address": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
         "router_address": "0x10ED43C718714eb63d5aA57B78B54704E256024E",
         "factory_address": "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
         "fee_pct": 0.1,
@@ -945,7 +946,7 @@ async def swap_config():
 @api.post("/swap/record")
 async def swap_record(req: SwapRecordReq, m: dict = Depends(current_member)):
     import re, asyncio
-    if req.direction not in ("USDT_TO_MERQ", "MERQ_TO_USDT"):
+    if req.direction not in ("BNB_TO_MERQ", "MERQ_TO_BNB"):
         raise HTTPException(400, "Invalid direction")
     if not re.fullmatch(r"0x[0-9a-fA-F]{64}", req.tx_hash):
         raise HTTPException(400, "Invalid transaction hash")

@@ -1023,7 +1023,7 @@ def build_admin_router(d):
         from eth_utils import is_address, to_checksum_address
         cur = await d.get_swap_config()
         upd = {}
-        for k in ("merq_token_address", "usdt_token_address", "router_address", "factory_address", "fee_wallet"):
+        for k in ("merq_token_address", "usdt_token_address", "wbnb_address", "router_address", "factory_address", "fee_wallet"):
             if k in payload:
                 v = (payload[k] or "").strip()
                 if v and not is_address(v):

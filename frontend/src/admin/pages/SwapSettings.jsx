@@ -11,6 +11,7 @@ const FIELDS = [
   ["fee_wallet", "Fee Receiving Wallet", "text", "0x…"],
   ["fee_pct", "Swap Fee (%)", "number", "0.1"],
   ["default_slippage_pct", "Default Slippage (%)", "number", "1"],
+  ["wbnb_address", "WBNB Contract (BNB pool)", "text", ""],
   ["usdt_token_address", "USDT Token Contract", "text", ""],
   ["router_address", "PancakeSwap Router", "text", ""],
   ["factory_address", "PancakeSwap Factory", "text", ""],
@@ -37,7 +38,7 @@ export default function SwapSettings() {
 
   return (
     <div>
-      <AHeader title="Swap Settings" subtitle="USDT ⇄ MERQ on-chain swap via PancakeSwap. Contract, fee wallet and fee are editable here.">
+      <AHeader title="Swap Settings" subtitle="BNB ⇄ MERQ on-chain swap via PancakeSwap. Contract, fee wallet and fee are editable here.">
         {canEdit && <Btn testid="swap-settings-save" onClick={save}><Save className="h-4 w-4" /> Save</Btn>}
       </AHeader>
       <div className="grid lg:grid-cols-3 gap-5 mb-5">
@@ -67,7 +68,7 @@ export default function SwapSettings() {
           </div>
           <p className="text-xs text-slate-500 mt-4 leading-relaxed">
             The fee is sent from the member's wallet to the fee wallet in a separate transfer before each swap.
-            Swaps only work once a MERQ/USDT pool with liquidity exists on PancakeSwap.
+            Swaps only work once a MERQ/BNB pool with liquidity exists on PancakeSwap.
           </p>
         </Panel>
       </div>
@@ -77,7 +78,7 @@ export default function SwapSettings() {
             {data.recent.map((s) => (
               <tr key={s.tx_hash} className="border-b border-white/5 hover:bg-white/5">
                 <td className="px-5 py-2.5 font-mono-merq text-xs text-slate-400">{s.address.slice(0, 8)}…{s.address.slice(-4)}</td>
-                <td className="px-5 py-2.5 text-slate-300">{s.direction === "USDT_TO_MERQ" ? "USDT → MERQ" : "MERQ → USDT"}</td>
+                <td className="px-5 py-2.5 text-slate-300">{s.direction.replace("_TO_", " → ")}</td>
                 <td className="px-5 py-2.5 text-right font-mono-merq text-slate-200">{fmt(s.amount_in, 4)}</td>
                 <td className="px-5 py-2.5 text-right font-mono-merq text-slate-200">{fmt(s.amount_out_est, 4)}</td>
                 <td className="px-5 py-2.5 text-right font-mono-merq text-amber-300">{fmt(s.fee_amount, 4)}</td>
