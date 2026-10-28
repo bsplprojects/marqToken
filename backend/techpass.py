@@ -92,6 +92,9 @@ def build_techpass(d):
     async def live_price(swap, settings):
         if swap.get("merq_token_address"):
             try:
+                if settings.get("merq_price_mode") == "fixed":
+                    dec = int(await asyncio.to_thread(_call, swap["rpc_url"], swap["merq_token_address"], "0x313ce567"), 16)
+                    return float(settings.get("merq_price_usd") or 0), "admin_price", dec
                 price, dec = await asyncio.to_thread(pool_price, swap)
                 if price:
                     return price, "pancakeswap_pool", dec

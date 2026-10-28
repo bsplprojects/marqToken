@@ -921,8 +921,17 @@ def build_admin_router(d):
                 err = f"Could not read the pool: {e}"
         else:
             err = "MERQ token contract is not set"
-        return {"admin_price": s.get("merq_price_usd"), "live_price": live, "error": err,
+        return {"admin_price": s.get("merq_price_usd"), "live_price": live, "error": err, "mode": s.get("merq_price_mode") or "live",
                 "updated_at": s.get("merq_price_updated_at"), "token_address": swap.get("merq_token_address")}
+
+    @r.put("/token-rate/mode")
+    async def token_rate_mode(payload: dict, request: Request, au: dict = Depends(require("settings", write=True))):
+        mode = payload.get("mode")
+        if mode not in ("live", "fixed"):
+            raise HTTPException(400, "Mode must be live or fixed")
+        await db.settings.update_one({"_id": "global"}, {"$set": {"merq_price_mode": mode}})
+        await audit(au, "set_token_rate_mode", "settings", None, {"mode": mode}, request)
+        return await rate_info()
 
     @r.get("/token-rate")
     async def token_rate(au: dict = Depends(require("dashboard"))):
@@ -937,6 +946,20 @@ def build_admin_router(d):
         await db.settings.update_one({"_id": "global"}, {"$set": {"merq_price_usd": info["live_price"], "merq_price_updated_at": now}})
         await audit(au, "refresh_token_rate", "settings", None, {"old": info["admin_price"], "new": info["live_price"]}, request)
         return {**info, "admin_price": info["live_price"], "updated_at": now}
+
+    @r.put("/token-rate")
+    async def token_rate_set(payload: dict, request: Request, au: dict = Depends(require("settings", write=True))):
+        try:
+            price = float(payload.get("price"))
+        except (TypeError, ValueError):
+            raise HTTPException(400, "Rate must be a number")
+        if price <= 0:
+            raise HTTPException(400, "Rate must be greater than 0")
+        old = (await d.get_settings()).get("merq_price_usd")
+        now = d.iso(d.now_utc())
+        await db.settings.update_one({"_id": "global"}, {"$set": {"merq_price_usd": price, "merq_price_updated_at": now}})
+        await audit(au, "set_token_rate", "settings", None, {"old": old, "new": price}, request)
+        return {**(await rate_info()), "admin_price": price, "updated_at": now}
 
     # ------------------------- entry / unity ports -------------------------
     @r.get("/ports/{port}")
