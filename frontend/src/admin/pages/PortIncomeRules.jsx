@@ -70,7 +70,7 @@ export default function PortIncomeRules() {
   const save = async () => {
     try {
       await adminApi.put("/port-income-rules", f);
-      toast.success("Port income rules saved");
+      toast.success("Income rules saved");
       qc.invalidateQueries({ queryKey: ["adm-port-rules"] });
     } catch (e) { toast.error(e?.response?.data?.detail || "Failed to save"); }
   };
@@ -84,7 +84,7 @@ export default function PortIncomeRules() {
 
   return (
     <div>
-      <AHeader title="Port Income Rules" subtitle="Entry & Unity Port: daily earnings, Partner Onboarding (Unity only), Level Income and Rank Rewards. USD amounts credited as MERQ at the live price.">
+      <AHeader title="Income Rules" subtitle="Entry & Unity Port: daily earnings, Partner Onboarding (Unity only), Level Income and Rank Rewards. USD amounts credited as MERQ at the live price.">
         {canEdit && <Btn testid="port-rules-accrue" variant="ghost" onClick={accrue}><Play className="h-4 w-4" /> Run daily earnings now</Btn>}
         {canEdit && <Btn testid="port-rules-reset" variant="ghost" onClick={() => setF(JSON.parse(JSON.stringify(data.defaults)))}><RotateCcw className="h-4 w-4" /> Chart defaults</Btn>}
         {canEdit && <Btn testid="port-rules-save" onClick={save}><Save className="h-4 w-4" /> Save</Btn>}

@@ -4,9 +4,9 @@ import { useAdminAuth } from "./AdminAuth";
 import { shortAddr } from "@/lib/format";
 import BrandLogo from "@/components/BrandLogo";
 import {
-  LayoutDashboard, Users, Network, Trophy, ArrowDownToLine,
+  LayoutDashboard, Users, Network, Trophy,
   ArrowUpFromLine, Boxes,
-  SlidersHorizontal, FileBarChart, Bell, Headphones, UserCog,
+  FileBarChart, Bell, Headphones, UserCog,
   ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, Ticket, DoorOpen, Percent, BarChart3,
 } from "lucide-react";
 
@@ -25,13 +25,10 @@ const NAV = [
     { to: "techpass", label: "TechPass Sales", icon: Ticket, mod: "deposits" },
     { to: "ports", label: "Entry & Unity Ports", icon: DoorOpen, mod: "deposits" },
     { to: "income-rules", label: "TechPass Income Rules", icon: Ticket, mod: "settings" },
-    { to: "port-income-rules", label: "Port Income Rules", icon: Percent, mod: "settings" },
     { to: "income-reports", label: "Income Reports", icon: BarChart3, mod: "reports" },
-    { to: "deposits", label: "Deposits", icon: ArrowDownToLine, mod: "deposits" },
     { to: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, mod: "withdrawals" },
   ]},
   { group: "Control", items: [
-    { to: "rules", label: "Business Rules", icon: SlidersHorizontal, mod: "rules" },
     { to: "reports", label: "Reports", icon: FileBarChart, mod: "reports" },
     { to: "notifications", label: "Notifications", icon: Bell, mod: "notifications" },
     { to: "support", label: "Support", icon: Headphones, mod: "support" },
@@ -42,6 +39,7 @@ const NAV = [
     { to: "health", label: "System Health", icon: Activity, mod: "health" },
     { to: "emergency", label: "Emergency Center", icon: AlertTriangle, mod: "emergency" },
     { to: "settings", label: "Settings", icon: Cog, mod: "settings" },
+    { to: "port-income-rules", label: "Income Rules", icon: Percent, mod: "settings" },
   ]},
 ];
 
