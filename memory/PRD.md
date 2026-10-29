@@ -77,3 +77,15 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - TechPass income engine (backend/income_engine.py), runs once per confirmed TechPass (flag income_processed; startup backfill): Partner Onboarding (default 50% of price to direct sponsor); Momentum Booster MB1-MB8 = per-board binary matrix (2-wide, 5 levels) placed under nearest sponsor-upline in that board with BFS spillover (owner = root); entrant pays L1-L5 amounts to uplines; receiver paid net_profit first, then saves upgrade_save, then auto-enters next board (savings minus next board level total -> LP/treasury logged); Global Momentum = same sponsor-team binary, 20 levels x $1, receiver needs >=2 direct confirmed TechPass else skipped (income_events gm_skipped). Credited as MERQ at live price to members.available + income/income_usd. Collections matrix, mb_state, income_events. Admin /admin/income-rules (edit all amounts, totals, recent). Member income pages show USD, details, MB board progress. Sim test: backend/tests/engine_sim.py.
 - Board Trees page /trees (member): tabs MB1-MB8 + GM, binary rows w/ empty spots, direct vs spillover colors, drill into subtree (root restricted to own subtree). API GET /api/income/tree/{board}?root=.
 - Old incomes retired: /api/deposit, /growth/claim, /rewards/claim, /autopool/enter return 410. Admin pages Income, Profit Growth, Commission, Rewards, Autopool removed (nav + routes + files).
+
+
+## Update — Port incomes, admin & data copy
+- Port incomes live: Entry 0.30%/day; Unity 0.50/0.75/1%/day by amount, 12-month lock; 5% sponsor reward (Unity only); Level Income 25/15/10/5/4/3/2/1% of team daily earnings (needs $100 own port purchase); Rank M1–M7 one-time bonus = % x leg target (two strongest legs). Code: backend/port_income.py, hourly cron .emergent/crons.yml -> /api/cron/port-accrual
+- Principal withdrawal (Entry anytime, Unity after lock) credits USD value as MERQ at live price
+- Celebration banner for MB board upgrade / new rank (db.celebrations)
+- Admin: Income Reports (filters + CSV), Income Rules (under Settings), MERQ rate card (live pool rate, refresh, manual rate, live/fixed mode). Removed menus: Blockchain, Rank Mgmt, Reconciliation, Deposits, Business Rules
+- Swap now BNB <-> MERQ (PancakeSwap V2, WBNB path). Price reads MERQ/USDT pool, else MERQ/BNB x BNB/USDT
+- Referral links use https://merqonai.io; member Transactions menu removed
+- All data copied to user's Atlas (EXTERNAL_MONGO_URL, db merqon_database, 539 docs). App still runs on local MONGO_URL
+- BLOCKED: TREASURY_PRIVATE_KEY invalid (40 chars), so on-chain withdrawals are off
+- Backlog: smart contracts, chain monitoring/reconciliation, full UI test run of new screens
