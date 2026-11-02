@@ -106,7 +106,7 @@ def build_ports(d):
         merq = (usd / Decimal(str(price))).quantize(Decimal("0.000001"), rounding=ROUND_UP)
         q = {"_id": secrets.token_hex(12), "port": port, "address": m["_id"], "amount_usd": float(usd), "merq_price": price,
              "price_source": source, "merq_amount": float(merq), "merq_amount_wei": str(int(merq * (10 ** dec))),
-             "decimals": dec, "token_address": swap["merq_token_address"], "receive_wallet": tp["receive_wallet"],
+             "decimals": dec, "token_address": swap["merq_token_address"], "receive_wallet": cfg.get("receive_wallet") or tp["receive_wallet"],
              "rpc_url": swap["rpc_url"], "expires_at": d.iso(d.now_utc() + timedelta(seconds=QUOTE_TTL)),
              "created_at": d.iso(d.now_utc())}
         await db.port_quotes.insert_one(q)

@@ -1,6 +1,7 @@
 """MerqON Admin Panel — RBAC-gated comprehensive admin API (separate shell)."""
 import asyncio
 import io
+import os
 import re
 import csv
 import time
@@ -995,6 +996,12 @@ def build_admin_router(d):
                     raise HTTPException(400, f"{k} must be a number")
         if "enabled" in payload:
             upd["enabled"] = bool(payload["enabled"])
+        if "receive_wallet" in payload:
+            from eth_utils import is_address, to_checksum_address
+            v = (payload["receive_wallet"] or "").strip()
+            if v and not is_address(v):
+                raise HTTPException(400, "Receive wallet is not a valid wallet address")
+            upd["receive_wallet"] = to_checksum_address(v) if v else ""
         new = {**cur, **upd}
         if not 1 <= new["min_usd"] <= new["max_usd"] <= 10000000:
             raise HTTPException(400, "Minimum must be at least $1 and not more than the maximum")
@@ -1100,5 +1107,13 @@ def build_admin_router(d):
         await db.settings.update_one({"_id": "global"}, {"$set": {"swap": new}})
         await audit(au, "update_swap_config", "token", None, upd, request)
         return {"ok": True, "config": new}
+
+    @r.get("/wallets")
+    async def wallets_get(au: dict = Depends(require("token"))):
+        swap, tp, ports = await d.get_swap_config(), await d.techpass_config(), await d.ports_config()
+        tre = await asyncio.to_thread(d.treasury_status, swap)
+        return {"swap": swap, "techpass_receive_wallet": tp.get("receive_wallet"),
+                "ports": {k: {"receive_wallet": v.get("receive_wallet") or "", "fallback": tp.get("receive_wallet")} for k, v in ports.items()},
+                "treasury": {**tre, "key_set": bool(os.environ.get("TREASURY_PRIVATE_KEY", "").strip())}}
 
     return r

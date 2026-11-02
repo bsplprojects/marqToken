@@ -17,7 +17,7 @@ try:
     sig = acct.sign_message(encode_defunct(text=n["message"])).signature.hex()
     tok = requests.post(f"{API}/auth/verify", json={"address": acct.address, "nonce": n["nonce"], "signature": "0x" + sig.removeprefix("0x")}).json()["access_token"]
     H = {"Authorization": f"Bearer {tok}"}
-    for method, path, body in [("get", "/admin/token-rate", None), ("get", "/admin/port-income-rules", None),
+    for method, path, body in [("get", "/admin/wallets", None), ("put", "/admin/ports/entry/config", {"receive_wallet": "bad"}), ("get", "/admin/token-rate", None), ("get", "/admin/port-income-rules", None),
                                ("put", "/admin/port-income-rules", {"entry_daily_pct": 0.3}),
                                ("post", "/admin/port-income/accrue", None), ("get", "/admin/income-report?page=1", None),
                                ("get", "/admin/income-report?stream=port_level_income", None),

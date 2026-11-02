@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Network, Trophy,
   ArrowUpFromLine, Boxes,
   FileBarChart, Bell, Headphones, UserCog,
-  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, Ticket, DoorOpen, Percent, BarChart3,
+  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, Ticket, DoorOpen, Percent, BarChart3, Wallet,
 } from "lucide-react";
 
 const NAV = [
@@ -40,6 +40,7 @@ const NAV = [
     { to: "emergency", label: "Emergency Center", icon: AlertTriangle, mod: "emergency" },
     { to: "settings", label: "Settings", icon: Cog, mod: "settings" },
     { to: "port-income-rules", label: "Income Rules", icon: Percent, mod: "settings" },
+    { to: "wallets", label: "Wallets & Contracts", icon: Wallet, mod: "token" },
   ]},
 ];
 
