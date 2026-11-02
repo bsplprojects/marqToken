@@ -41,8 +41,12 @@ def build_income_engine(d):
         if await db.matrix.find_one({"_id": pid}):
             return None
         m = await db.members.find_one({"_id": addr})
-        up, anchor = m.get("sponsor"), None
+        up, anchor = (m.get("sponsor") if board != "GM" else None), None
         seen = set()
+        if board == "GM":
+            # Global Momentum is one company-wide tree, filled level by level in purchase order
+            top = await db.matrix.find_one({"board": "GM", "parent": None}, sort=[("created_at", 1)])
+            anchor = top["member"] if top else None
         while up and up not in seen:
             seen.add(up)
             if await db.matrix.find_one({"_id": f"{board}:{up}"}):
