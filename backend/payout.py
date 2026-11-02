@@ -91,8 +91,17 @@ async def process_payout(d, wid: str) -> dict:
         return await db.withdrawals.find_one({"_id": wid})
     swap = await d.get_swap_config()
     try:
+        need = w["net"] + (w.get("fee_merq") or 0)
+        bal = (await asyncio.to_thread(treasury_status, swap)).get("merq_balance")
+        if bal is not None and bal < need:
+            raise PayoutError("Treasury wallet does not hold enough MERQ")
         txh = await asyncio.to_thread(send_merq, swap, w["address"], w["net"])
         upd = {"status": "sent", "tx_hash": txh, "reason": None, "sent_at": d.iso(d.now_utc())}
+        if w.get("fee_merq") and swap.get("fee_wallet") and not w.get("fee_tx_hash"):
+            try:
+                upd["fee_tx_hash"] = await asyncio.to_thread(send_merq, swap, swap["fee_wallet"], w["fee_merq"])
+            except PayoutError as fe:
+                upd["fee_error"] = str(fe)
         await db.transactions.update_one({"meta.request_id": wid}, {"$set": {"status": "pending", "tx_hash": txh}})
     except PayoutError as e:
         upd = {"status": "payout_failed", "reason": str(e)}

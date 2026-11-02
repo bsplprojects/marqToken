@@ -38,7 +38,7 @@ export default function SwapSettings() {
 
   return (
     <div>
-      <AHeader title="Swap Settings" subtitle="BNB ⇄ MERQ on-chain swap via PancakeSwap. Contract, fee wallet and fee are editable here.">
+      <AHeader title="Swap Settings" subtitle="USDT ⇄ MERQ on-chain swap via PancakeSwap. Contract, fee wallet and fee are editable here.">
         {canEdit && <Btn testid="swap-settings-save" onClick={save}><Save className="h-4 w-4" /> Save</Btn>}
       </AHeader>
       <div className="grid lg:grid-cols-3 gap-5 mb-5">
@@ -68,7 +68,7 @@ export default function SwapSettings() {
           </div>
           <p className="text-xs text-slate-500 mt-4 leading-relaxed">
             The fee is sent from the member's wallet to the fee wallet in a separate transfer before each swap.
-            Swaps only work once a MERQ/BNB pool with liquidity exists on PancakeSwap.
+            Swaps only work once a MERQ/USDT pool with liquidity exists on PancakeSwap.
           </p>
         </Panel>
       </div>

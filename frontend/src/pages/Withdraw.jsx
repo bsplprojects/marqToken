@@ -51,7 +51,7 @@ export default function Withdraw() {
   return (
     <div>
       <PageHeader eyebrow="Treasury" title="Withdraw"
-        subtitle="Withdraw your available earnings to your connected wallet." />
+        subtitle="Your earnings are in USDT. Enter a USDT amount and receive MERQ in your wallet at the live rate." />
 
       <div className="grid lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3 glass rounded-2xl border border-white/8 p-6 sm:p-8">
@@ -59,10 +59,10 @@ export default function Withdraw() {
             <>
               <div className="flex items-center justify-between mb-6">
                 <span className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">Available Balance</span>
-                <span className="font-mono-merq text-white">{fmt(dash?.available)} MERQ</span>
+                <span data-testid="withdraw-available" className="font-mono-merq text-white">{fmt(dash?.available)} USDT</span>
               </div>
 
-              <label className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">Amount (MERQ)</label>
+              <label className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">Amount (USDT)</label>
               <input
                 data-testid="withdraw-amount-input"
                 type="number" value={wAmount}
@@ -75,12 +75,13 @@ export default function Withdraw() {
 
               {quote && (
                 <div className="mt-5 space-y-2 rounded-xl border border-white/8 bg-white/5 p-4 font-mono-merq text-sm" data-testid="withdraw-fee-display">
-                  <Row label="Amount" value={`${fmt(quote.amount)} MERQ`} />
-                  <Row label={`Protocol Fee`} value={`-${fmt(quote.protocol_fee)} MERQ`} muted />
-                  <Row label={`Network Fee`} value={`-${fmt(quote.fee)} MERQ`} muted />
+                  <Row label="Amount" value={`${fmt(quote.amount)} USDT`} />
+                  <Row label={`Fee (${fmt(quote.fee_pct, 0)}%)`} value={`-${fmt(quote.fee)} USDT`} muted />
+                  <Row label="Net amount" value={`${fmt(quote.net_usdt)} USDT`} />
+                  <Row label="MERQ rate" value={`1 MERQ = $${Number(quote.merq_price).toLocaleString(undefined, { maximumFractionDigits: 8 })}`} muted />
                   <div className="h-px bg-white/10 my-2" />
-                  <Row label="You Receive" value={`${fmt(quote.receive)} MERQ`} highlight />
-                  <div className="text-[11px] text-slate-500">Minimum withdrawal: {fmt(quote.min_withdraw, 0)} MERQ</div>
+                  <Row label="You Receive" value={`${fmt(quote.merq_receive, 4)} MERQ`} highlight testid="withdraw-merq-receive" />
+                  <div className="text-[11px] text-slate-500">Minimum withdrawal: {fmt(quote.min_withdraw, 0)} USDT · rate is locked when you confirm</div>
                 </div>
               )}
 
@@ -100,7 +101,7 @@ export default function Withdraw() {
               <span className="font-display font-semibold">Security Checks</span>
             </div>
             <ul className="space-y-2 text-sm text-slate-400">
-              {["Active Merq TechPass", "Amount & minimum validation", "Daily limit & cooldown", "Sufficient available balance", "Large amounts reviewed by admin", "Paid in real MERQ on BNB Smart Chain"].map((c) => (
+              {["Active Merq TechPass", "Amount & minimum validation", "Daily limit & cooldown", "Sufficient available balance", "Large amounts reviewed by admin", "Earned in USDT, paid in real MERQ on BNB Smart Chain"].map((c) => (
                 <li key={c} className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400/70" /> {c}</li>
               ))}
             </ul>
@@ -112,9 +113,9 @@ export default function Withdraw() {
   );
 }
 
-function Row({ label, value, muted, highlight }) {
+function Row({ label, value, muted, highlight, testid }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between" data-testid={testid}>
       <span className={muted ? "text-slate-500" : "text-slate-400"}>{label}</span>
       <span className={highlight ? "text-amber-300 font-bold" : "text-slate-200"}>{value}</span>
     </div>

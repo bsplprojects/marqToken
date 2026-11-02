@@ -114,7 +114,7 @@ export default function Dashboard() {
           <div className={`grid grid-cols-1 sm:grid-cols-2 ${g.items.length > 3 ? "xl:grid-cols-4" : "lg:grid-cols-3"} gap-4`}>
             {g.items.map((c) => (
               <button key={c.key} onClick={() => navigate(`/income/${c.slug}`)} className="text-left">
-                <StatCard testid={`income-card-${c.key}`} label={c.label} value={fmt(streams?.[c.key] ?? 0)} sub="MERQ" icon={c.icon} accent={c.accent} />
+                <StatCard testid={`income-card-${c.key}`} label={c.label} value={fmt(streams?.[c.key] ?? 0)} sub="USDT" icon={c.icon} accent={c.accent} />
               </button>
             ))}
           </div>

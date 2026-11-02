@@ -261,8 +261,8 @@ def build_admin_router(d):
         docs = await db.withdrawals.find(q).sort("created_at", -1).to_list(1000)
         docs = [await d.refresh_sent(d, w) for w in docs]
         return [{"id": w["_id"], "address": d.short(w["address"]), "full": w["address"],
-                 "amount": w["amount"], "fee": w["fee"], "protocol_fee": w["protocol_fee"],
-                 "net": w["net"], "status": w["status"], "created_at": w["created_at"],
+                 "amount": w["amount"], "fee": w["fee"], "protocol_fee": w.get("protocol_fee", 0),
+                 "net": w["net"], "merq_price": w.get("merq_price"), "fee_merq": w.get("fee_merq"), "fee_tx_hash": w.get("fee_tx_hash"), "status": w["status"], "created_at": w["created_at"],
                  "tx_hash": w.get("tx_hash"), "reason": w.get("reason"),
                  "bscscan_url": f"{d.BSCSCAN_BASE}{w['tx_hash']}" if w.get("tx_hash") else None} for w in docs]
 

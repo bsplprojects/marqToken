@@ -41,7 +41,7 @@ export default function MemberDetail() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         <KCard label="Total Deposits" value={fmt(f.total_deposits, 0)} accent="emerald" />
         <KCard label="Total Withdrawals" value={fmt(f.total_withdrawals, 0)} accent="rose" />
-        <KCard label="Available" value={fmt(f.available, 0)} accent="amber" />
+        <KCard label="Available (USDT)" value={fmt(f.available, 2)} accent="amber" />
         <KCard label="Total Earned" value={fmt(f.total_earned, 0)} accent="cyan" />
       </div>
 

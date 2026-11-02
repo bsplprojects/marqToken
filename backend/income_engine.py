@@ -83,12 +83,11 @@ def build_income_engine(d):
         return out
 
     async def credit(addr, key, usd, meta, price):
-        merq = round(usd / price, 6) if price > 0 else 0.0
-        await db.members.update_one({"_id": addr}, {"$inc": {"available": merq, f"income.{key}": merq,
+        await db.members.update_one({"_id": addr}, {"$inc": {"available": usd, f"income.{key}": usd,
                                                              f"income_usd.{key}": usd}})
-        await db.transactions.insert_one({"_id": secrets.token_hex(12), "address": addr, "type": key, "amount": merq,
+        await db.transactions.insert_one({"_id": secrets.token_hex(12), "address": addr, "type": key, "amount": usd,
                                           "status": "confirmed", "tx_hash": None, "created_at": d.iso(d.now_utc()),
-                                          "meta": {**meta, "usd": usd, "merq_price": price}})
+                                          "meta": {**meta, "usd": usd, "currency": "USDT"}})
 
     async def log(kind, **kw):
         await db.income_events.insert_one({"_id": secrets.token_hex(12), "kind": kind, **kw, "created_at": d.iso(d.now_utc())})

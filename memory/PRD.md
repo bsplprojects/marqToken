@@ -111,3 +111,8 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - MERQ coin image /merq-token.webp (+ merq-token-256.png for MetaMask). MerqCoin component used on dashboard balance and swap MERQ chip; hover spin/glow (.merq-coin-hover)
 - "Add MERQ to MetaMask" (wallet_watchAsset, reads /api/swap/config) in landing Tokenomics card
 - Token allocation total supply = 10,000,000 MERQ (10M)
+
+## Update — USDT incomes, MERQ withdrawals, USDT swap
+- All incomes credited in USDT (members.available, income.{key}, transactions.amount = USD; meta.currency USDT). Port principal return also USDT
+- Withdraw: member enters USDT; 5% fee (withdraw_fee_pct) in USDT; net converted to MERQ at live rate locked at request (withdrawals.merq_price, net=MERQ, fee_merq). Payout sends net MERQ to member + fee_merq MERQ to Swap Fee Receive Wallet (fee_tx_hash). Limits/min/auto-approve read as USDT. protocol fee no longer applied
+- Member swap reverted to USDT <-> MERQ (PancakeSwap V2)

@@ -44,14 +44,14 @@ export default function Withdrawals() {
           ))}
         </div>
         {data && data.length ? (
-          <Table testid="withdrawals-table" columns={[{ label: "Request" }, { label: "Member" }, { label: "Amount", right: true },
-            { label: "Fee", right: true }, { label: "Net", right: true }, { label: "Status" }, { label: "Date" }, { label: "Actions" }]}>
+          <Table testid="withdrawals-table" columns={[{ label: "Request" }, { label: "Member" }, { label: "Amount (USDT)", right: true },
+            { label: "Fee (USDT)", right: true }, { label: "Sends (MERQ)", right: true }, { label: "Status" }, { label: "Date" }, { label: "Actions" }]}>
             {data.map((w) => (
               <tr key={w.id} className="border-b border-white/5 hover:bg-white/5">
                 <td className="px-5 py-3 font-mono-merq text-xs text-amber-300">{w.id}</td>
                 <td className="px-5 py-3 font-mono-merq text-slate-300">{w.address}</td>
                 <td className="px-5 py-3 text-right font-mono-merq text-white">{fmt(w.amount)}</td>
-                <td className="px-5 py-3 text-right font-mono-merq text-slate-500">{fmt(w.fee + w.protocol_fee)}</td>
+                <td className="px-5 py-3 text-right font-mono-merq text-slate-500">{fmt((w.fee || 0) + (w.protocol_fee || 0))}</td>
                 <td className="px-5 py-3 text-right font-mono-merq text-emerald-400">{fmt(w.net)}</td>
                 <td className="px-5 py-3">
                   <Pill status={w.status} />

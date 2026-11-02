@@ -19,7 +19,7 @@ export const WithdrawHistory = () => {
           {data.map((w) => (
             <div key={w.id} data-testid="withdraw-history-row" className="flex flex-wrap items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-4 py-3">
               <span className="font-mono-merq text-xs text-amber-300">{w.id}</span>
-              <span className="text-sm text-white">{fmt(w.amount)} MERQ</span>
+              <span className="text-sm text-white">{fmt(w.amount)} {w.currency === "USDT" ? "USDT" : "MERQ"}</span>
               <span className="font-mono-merq text-xs text-slate-400">receive {fmt(w.net)} MERQ</span>
               <span className={`rounded-full border px-2 py-0.5 font-mono-merq text-[10px] uppercase tracking-widest ${TONE[w.status] || "text-amber-300 border-amber-400/30"}`}>{LABEL[w.status] || w.status}</span>
               <span className="ml-auto font-mono-merq text-[11px] text-slate-500">{new Date(w.created_at).toLocaleString()}</span>

@@ -35,7 +35,7 @@ export default function IncomeReports() {
         <KCard testid="income-report-total" label="Total paid (filtered)" value={`$${fmt(totalUsd)}`} sub={`${data?.total ?? 0} payouts`} accent="amber" />
         {data && data.streams.map((k) => (
           <button key={k} data-testid={`income-report-card-${k}`} onClick={() => set("stream", fl.stream === k ? "" : k)} className={`text-left rounded-2xl ${fl.stream === k ? "ring-1 ring-amber-400/60" : ""}`}>
-            <KCard label={STREAM_LABEL[k]} value={`$${fmt(data.summary[k].usd)}`} sub={`${fmt(data.summary[k].merq, 2)} MERQ · ${data.summary[k].earners} earners`} accent={k.startsWith("tp_") ? "cyan" : "emerald"} />
+            <KCard label={STREAM_LABEL[k]} value={`$${fmt(data.summary[k].usd)}`} sub={`${data.summary[k].count} payouts · ${data.summary[k].earners} earners`} accent={k.startsWith("tp_") ? "cyan" : "emerald"} />
           </button>
         ))}
       </div>
@@ -50,13 +50,12 @@ export default function IncomeReports() {
           <input data-testid="income-report-end" type="date" value={fl.end} onChange={(e) => set("end", e.target.value)} className={inp} />
         </div>
         {data?.rows.length ? (
-          <Table testid="income-report-table" columns={[{ label: "Wallet" }, { label: "Income" }, { label: "USD", right: true }, { label: "MERQ", right: true }, { label: "From" }, { label: "Detail" }, { label: "Date" }]}>
+          <Table testid="income-report-table" columns={[{ label: "Wallet" }, { label: "Income" }, { label: "USDT", right: true }, { label: "From" }, { label: "Detail" }, { label: "Date" }]}>
             {data.rows.map((t) => (
               <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
                 <td className="px-5 py-2.5 font-mono-merq text-xs text-slate-400">{t.address.slice(0, 8)}…{t.address.slice(-4)}</td>
                 <td className="px-5 py-2.5 text-slate-200">{STREAM_LABEL[t.type]}</td>
                 <td className="px-5 py-2.5 text-right font-mono-merq text-slate-200">${fmt(t.usd ?? 0, 4)}</td>
-                <td className="px-5 py-2.5 text-right font-mono-merq text-amber-300">{fmt(t.merq, 4)}</td>
                 <td className="px-5 py-2.5 font-mono-merq text-xs text-slate-500">{t.from ? `${t.from.slice(0, 6)}…${t.from.slice(-4)}` : "—"}</td>
                 <td className="px-5 py-2.5 text-xs text-slate-400">{t.detail || "—"}</td>
                 <td className="px-5 py-2.5 text-xs text-slate-500">{dt(t.created_at)}</td>

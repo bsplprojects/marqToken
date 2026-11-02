@@ -767,14 +767,21 @@ class WithdrawReq(BaseModel):
     amount: float
 
 
+async def withdraw_calc(amount: float, settings: dict):
+    """USDT amount -> fee (USDT) and MERQ to send at the live rate."""
+    price, source, _ = await _admin_deps.live_price(await get_swap_config(), settings)
+    if price <= 0:
+        raise HTTPException(503, "MERQ price unavailable")
+    fee = round(amount * settings["withdraw_fee_pct"] / 100.0, 4)
+    net = round(amount - fee, 4)
+    return {"amount": round(amount, 4), "fee": fee, "net_usdt": net, "merq_price": price, "price_source": source,
+            "fee_pct": settings["withdraw_fee_pct"], "merq_receive": round(net / price, 6), "merq_fee": round(fee / price, 6)}
+
+
 @api.get("/withdraw/quote")
 async def withdraw_quote(amount: float, m: dict = Depends(current_member)):
     settings = await get_settings()
-    fee = amount * settings["withdraw_fee_pct"] / 100.0
-    protocol = amount * settings["protocol_fee_pct"] / 100.0
-    return {"amount": round(amount, 4), "fee": round(fee, 4), "protocol_fee": round(protocol, 4),
-            "receive": round(amount - fee - protocol, 4), "min_withdraw": settings["min_withdraw"],
-            "available": round(m["available"], 4)}
+    return {**await withdraw_calc(amount, settings), "min_withdraw": settings["min_withdraw"], "available": round(m["available"], 4)}
 
 
 @api.post("/withdraw/request")
@@ -789,52 +796,46 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
     if not (await get_swap_config()).get("merq_token_address"):
         raise HTTPException(400, "MERQ token is not live yet")
     if amt < settings["min_withdraw"]:
-        raise HTTPException(400, f"Minimum withdrawal is {settings['min_withdraw']} MERQ")
+        raise HTTPException(400, f"Minimum withdrawal is {settings['min_withdraw']} USDT")
     if amt > m["available"]:
         raise HTTPException(400, "Insufficient available balance")
-    # daily limit
     today = now_utc().date().isoformat()
     used = m["withdrawn_today"] if m.get("withdrawn_today_date") == today else 0.0
     if used + amt > settings["daily_withdraw_limit"]:
-        raise HTTPException(400, f"Exceeds daily limit of {settings['daily_withdraw_limit']} MERQ")
-    # cooldown
+        raise HTTPException(400, f"Exceeds daily limit of {settings['daily_withdraw_limit']} USDT")
     if m.get("last_withdraw_at"):
         delta = now_utc() - parse_iso(m["last_withdraw_at"])
         if delta < timedelta(hours=settings["withdraw_cooldown_hours"]):
             hrs = settings["withdraw_cooldown_hours"] - delta.total_seconds() / 3600.0
             raise HTTPException(400, f"Cooldown active. Try again in {hrs:.1f}h")
-
-    fee = amt * settings["withdraw_fee_pct"] / 100.0
-    protocol = amt * settings["protocol_fee_pct"] / 100.0
-    receive = amt - fee - protocol
-    # Hold the funds (deduct available immediately)
-    await db.members.update_one({"_id": m["_id"]}, {
+    q = await withdraw_calc(amt, settings)
+    res = await db.members.update_one({"_id": m["_id"], "available": {"$gte": amt}}, {
         "$inc": {"available": -amt},
         "$set": {"last_withdraw_at": iso(now_utc()), "withdrawn_today": used + amt, "withdrawn_today_date": today},
     })
+    if not res.modified_count:
+        raise HTTPException(400, "Insufficient available balance")
     auto = amt <= float(settings.get("withdraw_auto_approve_under", 1000))
     wid = "WD-" + secrets.token_hex(5).upper()
     status = "approved" if auto else "pending"
     wdoc = {
-        "_id": wid, "address": m["_id"], "amount": round(amt, 4), "fee": round(fee, 4),
-        "protocol_fee": round(protocol, 4), "net": round(receive, 4), "status": status,
-        "created_at": iso(now_utc()), "tx_hash": None, "approvals": [], "reason": None,
+        "_id": wid, "address": m["_id"], "amount": q["amount"], "fee": q["fee"], "net_usdt": q["net_usdt"],
+        "merq_price": q["merq_price"], "net": q["merq_receive"], "fee_merq": q["merq_fee"], "currency": "USDT",
+        "status": status, "created_at": iso(now_utc()), "tx_hash": None, "fee_tx_hash": None, "approvals": [], "reason": None,
     }
     await db.withdrawals.insert_one(wdoc)
-    tx = {
-        "_id": secrets.token_hex(12), "address": m["_id"], "type": "withdraw",
-        "amount": round(-amt, 6), "status": "pending",
+    await db.transactions.insert_one({
+        "_id": secrets.token_hex(12), "address": m["_id"], "type": "withdraw", "amount": round(-amt, 6), "status": "pending",
         "tx_hash": None, "created_at": iso(now_utc()),
-        "meta": {"request_id": wid, "fee": round(fee, 4), "protocol_fee": round(protocol, 4), "received": round(receive, 4)},
-    }
-    await db.transactions.insert_one(tx)
+        "meta": {"request_id": wid, "currency": "USDT", "fee": q["fee"], "merq_price": q["merq_price"], "merq_receive": q["merq_receive"]},
+    })
     if auto:
         wdoc = await process_payout(_admin_deps, wid)
     msg = {"sent": "MERQ sent to your wallet — confirming on-chain",
            "pending": "Withdrawal requested — waiting for admin approval",
            "payout_failed": "Withdrawal is queued — the team will complete the transfer shortly"}.get(wdoc["status"], "Withdrawal requested")
-    return {"ok": True, "status": wdoc["status"], "request_id": wid, "received": round(receive, 4),
-            "fee": round(fee, 4), "protocol_fee": round(protocol, 4), "tx_hash": wdoc.get("tx_hash"), "message": msg}
+    return {"ok": True, "status": wdoc["status"], "request_id": wid, "merq_receive": q["merq_receive"], "fee": q["fee"],
+            "tx_hash": wdoc.get("tx_hash"), "message": msg}
 
 
 @api.get("/withdraw/history")
@@ -843,7 +844,8 @@ async def withdraw_history(m: dict = Depends(current_member)):
     out = []
     for w in docs:
         w = await refresh_sent(_admin_deps, w)
-        out.append({"id": w["_id"], "amount": w["amount"], "net": w["net"], "status": w["status"],
+        out.append({"id": w["_id"], "amount": w["amount"], "net": w["net"], "status": w["status"], "currency": w.get("currency", "MERQ"),
+                    "fee": w.get("fee"), "merq_price": w.get("merq_price"),
                     "created_at": w["created_at"], "tx_hash": w.get("tx_hash"),
                     "bscscan_url": f"{BSCSCAN_BASE}{w['tx_hash']}" if w.get("tx_hash") else None})
     return out
@@ -946,7 +948,7 @@ async def swap_config():
 @api.post("/swap/record")
 async def swap_record(req: SwapRecordReq, m: dict = Depends(current_member)):
     import re, asyncio
-    if req.direction not in ("BNB_TO_MERQ", "MERQ_TO_BNB"):
+    if req.direction not in ("USDT_TO_MERQ", "MERQ_TO_USDT"):
         raise HTTPException(400, "Invalid direction")
     if not re.fullmatch(r"0x[0-9a-fA-F]{64}", req.tx_hash):
         raise HTTPException(400, "Invalid transaction hash")

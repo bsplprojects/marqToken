@@ -16,7 +16,7 @@ const Principal = ({ p, onChange }) => {
     setBusy(true);
     try {
       const { data } = await api.post(`/ports/principal/${p.id}/withdraw`);
-      toast.success(`${fmt(data.merq, 4)} MERQ added to your withdrawable balance`);
+      toast.success(`$${fmt(data.usd)} USDT added to your withdrawable balance`);
       onChange?.();
     } catch (e) { toast.error(e?.response?.data?.detail || "Could not withdraw principal"); }
     setBusy(false);

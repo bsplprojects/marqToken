@@ -49,11 +49,10 @@ def build_port_income(d):
         return p
 
     async def credit(addr, key, usd, meta, px):
-        merq = round(usd / px, 6) if px > 0 else 0.0
-        await db.members.update_one({"_id": addr}, {"$inc": {"available": merq, f"income.{key}": merq, f"income_usd.{key}": usd}})
-        await db.transactions.insert_one({"_id": secrets.token_hex(12), "address": addr, "type": key, "amount": merq,
+        await db.members.update_one({"_id": addr}, {"$inc": {"available": usd, f"income.{key}": usd, f"income_usd.{key}": usd}})
+        await db.transactions.insert_one({"_id": secrets.token_hex(12), "address": addr, "type": key, "amount": usd,
                                           "status": "confirmed", "tx_hash": None, "created_at": d.iso(d.now_utc()),
-                                          "meta": {**meta, "usd": usd, "merq_price": px}})
+                                          "meta": {**meta, "usd": usd, "currency": "USDT"}})
 
     async def self_invest(addr):
         agg = await db.port_purchases.aggregate([{"$match": {"address": addr, "status": "confirmed", "principal_status": {"$ne": "withdrawn"}}},
@@ -172,13 +171,12 @@ def build_port_income(d):
                                                  {"$set": {"principal_status": "withdrawn", "principal_withdrawn_at": d.iso(d.now_utc())}})
         if not res.modified_count:
             raise HTTPException(409, "Principal already withdrawn")
-        px = await price()
-        merq = round(p["amount_usd"] / px, 6) if px > 0 else 0.0
-        await db.members.update_one({"_id": addr}, {"$inc": {"available": merq}})
-        await db.transactions.insert_one({"_id": secrets.token_hex(12), "address": addr, "type": "port_principal_return", "amount": merq,
+        usd = p["amount_usd"]
+        await db.members.update_one({"_id": addr}, {"$inc": {"available": usd}})
+        await db.transactions.insert_one({"_id": secrets.token_hex(12), "address": addr, "type": "port_principal_return", "amount": usd,
                                           "status": "confirmed", "tx_hash": None, "created_at": d.iso(d.now_utc()),
-                                          "meta": {"purchase": pid, "usd": p["amount_usd"], "merq_price": px}})
-        return {"ok": True, "merq": merq, "usd": p["amount_usd"]}
+                                          "meta": {"purchase": pid, "usd": usd, "currency": "USDT"}})
+        return {"ok": True, "usd": usd}
 
     async def member_info(addr):
         r = await rules()
