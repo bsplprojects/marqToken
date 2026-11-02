@@ -139,6 +139,8 @@ def build_income_engine(d):
 
     async def process_techpass(tp: dict):
         """Run once per confirmed TechPass."""
+        if tp.get("status") == "confirmed":
+            await db.members.update_one({"_id": tp["address"]}, {"$set": {"status": "active", "activated_at": d.iso(d.now_utc())}})
         claimed = await db.techpass.find_one_and_update({"_id": tp["_id"], "status": "confirmed", "income_processed": {"$ne": True}},
                                                         {"$set": {"income_processed": True}})
         if not claimed:

@@ -12,7 +12,7 @@ import {
   BarChart3, Menu, X,
 } from "lucide-react";
 
-const LOGO = "https://static.prod-images.emergentagent.com/jobs/0d2f38fb-f374-4f65-82fb-6baa71195ee0/images/b4d5a2f8bc3a3e78e56f4a056c410c8f300672e18ba36cf5663509880cb71b6e.jpeg";
+const LOGO = "/merqon-mark.png";
 const HERO = "https://static.prod-images.emergentagent.com/jobs/0d2f38fb-f374-4f65-82fb-6baa71195ee0/images/c029c899093bdcd680279ee1281843213d817cada88f1eba548e7c7c0d8d4191.jpeg";
 
 const PILLARS = [
@@ -89,7 +89,7 @@ export default function MarketingLanding() {
       <header className="sticky top-0 z-50 glass border-b border-white/5">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-5 sm:px-8 h-20">
           <a href="#top" className="flex items-center gap-3">
-            <img src={LOGO} alt="MerqON" className="h-12 w-12 rounded-full object-cover ring-1 ring-amber-400/40" />
+            <img src={LOGO} alt="MerqON" className="h-12 w-12 rounded-xl object-cover bg-black ring-1 ring-amber-400/40" />
             <div>
               <div className="font-display text-xl font-black tracking-tight leading-none">
                 <span className="text-white">Merq</span><span className="gold-text">ON</span>
@@ -269,7 +269,7 @@ export default function MarketingLanding() {
         <div className="grid lg:grid-cols-5 gap-5">
           <div className="lg:col-span-2 glass rounded-3xl gold-border p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-amber-400/5 blur-3xl" />
-            <img src={LOGO} alt="MERQ" className="relative h-28 w-28 rounded-full object-cover ring-2 ring-amber-400/40 mb-5" />
+            <img src={LOGO} alt="MERQ" className="relative h-28 w-28 rounded-xl object-cover bg-black ring-2 ring-amber-400/40 mb-5" />
             <div className="relative font-display text-3xl font-black gold-text">MERQ</div>
             <div className="relative font-mono-merq text-xs uppercase tracking-widest text-slate-500 mt-1">BEP-20 · BNB Smart Chain</div>
           </div>
@@ -337,7 +337,7 @@ export default function MarketingLanding() {
         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <img src={LOGO} alt="MerqON" className="h-10 w-10 rounded-full object-cover ring-1 ring-amber-400/40" />
+              <img src={LOGO} alt="MerqON" className="h-10 w-10 rounded-xl object-cover bg-black ring-1 ring-amber-400/40" />
               <div>
                 <div className="font-display font-black"><span className="text-white">Merq</span><span className="gold-text">ON</span></div>
                 <div className="font-mono-merq text-[8px] eyebrow text-amber-400/60 uppercase">Build to Connect</div>
