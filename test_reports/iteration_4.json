@@ -1,0 +1,20 @@
+{
+  "summary": "Retest of Wallets & Contracts after iteration_3 fixes. Backend: 11/11 pytest passed (tests/test_wallets_atomic.py). Atomic PUT /api/admin/wallets correctly rejects unity 'abc' (400 'Unity Port Receive Wallet is not a valid address'), rpc 'http://x' (400), fee_pct 50 (400), empty techpass_wallet (400), bad MERQ address, non-numeric slippage — and settings.global swap/techpass/ports were byte-identical after each rejection (even when other fields in the same payload were changed). PUT /api/admin/swap with non-https rpc -> 400. Valid round trip saves and checksums entry wallet. Treasury: configured=true, key_set=true, address 0x162f2eaB23640181cE1c035Eb9852cfD7d694CE3, BNB/MERQ balances numeric (0). GET /api/admin/withdrawals/treasury configured=true. Private key never present in API JSON or UI DOM. UI: status text 'Private key is valid — withdrawals can be sent', address shown, MERQ 0.0000 / BNB 0.00000; invalid unity shows error toast and nothing persists after reload; valid save of entry 0x...dEaD persists after reload; restore save works. No withdrawal/on-chain send triggered.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_wallets_atomic.py", "/app/test_reports/pytest/pytest_wallets_atomic.xml"],
+  "action_items": [
+    "IMPORTANT, data: the real owner (0xc1aca..., IP 223.185.62.241) saved new wallets config at 2026-11-02T17:33:06 WHILE testing was running. My snapshot-restore briefly overwrote it, so I re-applied the owner's exact values from that audit_log entry. Current DB: MERQ 0x0Be2F6736e8f9188a774Aa953888DeDb883986e6, fee_wallet 0x5082E2...F4E6, techpass 0x74Fad7...5a1B, entry 0xBb8753...3093, unity 0x80B2AE...d500, rpc https://bsc-dataseed.binance.org, fee 0.1, slippage 1.0. Please confirm with the user that these are their intended values.",
+    "Optional: 'Save all' sends every field from a form loaded once, so the last write wins. A stale tab or a second admin can silently overwrite newer values. Consider an updated_at/version check (409 on mismatch)."
+  ],
+  "critical_code_review_comments": [
+    "wallets_put writes techpass as {**techpass_config(), receive_wallet} and ports.entry/unity as merged-with-defaults docs, so default keys get materialised into the DB on the first save. Harmless, but the DB changes even when the values are not changed.",
+    "No optimistic concurrency on PUT /api/admin/wallets (see action items)."
+  ],
+  "updated_files": ["/app/backend/tests/test_wallets_atomic.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None kept. Temp SUPER_ADMINs (TEST_tmp, TEST_ui) were created and removed. Owner 0xc1aca21abdfdbf0730e73b56fe949cd2703e63ad is the only active admin.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The owner is actively editing live wallets config. Do NOT blindly restore an old snapshot of settings.global swap/techpass/ports; check audit_logs (action update_wallets_contracts by 0xc1aca...) for edits made during your run. Run tests with pytest -p no:xdist removed (pytest.ini adds -n). test_wallets_atomic.py fixture asserts settings are identical after teardown."
+}
