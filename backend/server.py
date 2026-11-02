@@ -24,8 +24,8 @@ load_dotenv(ROOT_DIR / '.env')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger("merqon")
 
-MONGO_URL = os.environ['MONGO_URL']
-DB_NAME = os.environ['DB_NAME']
+MONGO_URL = os.environ.get('EXTERNAL_MONGO_URL') or os.environ['MONGO_URL']
+DB_NAME = os.environ['EXTERNAL_DB_NAME'] if os.environ.get('EXTERNAL_MONGO_URL') else os.environ['DB_NAME']
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ISSUER = os.environ.get('JWT_ISSUER', 'merqon-dapp')
 CHAIN_ID = int(os.environ.get('BSC_CHAIN_ID', '56'))
@@ -1003,29 +1003,7 @@ async def startup():
     await db.withdrawals.create_index("status")
     await db.audit_logs.create_index("created_at")
     settings = await get_settings()
-    # seed admin root member
-    admin = await db.members.find_one({"_id": ADMIN_DEMO_ADDRESS.lower()})
-    if not admin:
-        doc = new_member_doc(ADMIN_DEMO_ADDRESS, None, settings, is_admin=True)
-        doc["status"] = "active"
-        await db.members.insert_one(doc)
-        logger.info(f"Seeded admin root member {ADMIN_DEMO_ADDRESS}")
-    # seed super admin RBAC user
-    su = await db.admin_users.find_one({"_id": ADMIN_DEMO_ADDRESS.lower()})
-    if not su:
-        await db.admin_users.insert_one({
-            "_id": ADMIN_DEMO_ADDRESS.lower(),
-            "address": ADMIN_DEMO_ADDRESS,
-            "email": "admin@merqon.io",
-            "name": "Super Admin",
-            "role": "SUPER_ADMIN",
-            "status": "active",
-            "twofa_enabled": False,
-            "created_at": iso(now_utc()),
-            "last_login": None,
-        })
-        logger.info("Seeded SUPER_ADMIN admin user admin@merqon.io")
-    # revoke admin access of the public demo key (it stays only as the network root)
+    # the public demo key is never an admin
     await db.admin_users.update_one({"_id": ADMIN_DEMO_ADDRESS.lower()}, {"$set": {"status": "disabled"}})
     await db.settings.update_one({"_id": "global"}, {"$pull": {"admin_addresses": ADMIN_DEMO_ADDRESS.lower()}})
     # seed owner super admin wallets from env
@@ -1066,19 +1044,6 @@ async def startup():
                 "effective_from": iso(now_utc()), "created_by": "system", "created_at": iso(now_utc()), "active": True,
             })
         logger.info("Seeded rule versions V1")
-    # seed sample support tickets
-    if await db.tickets.count_documents({}) == 0:
-        samples = [
-            {"category": "Withdrawal", "priority": "high", "subject": "Withdrawal pending too long", "status": "open"},
-            {"category": "Referral", "priority": "medium", "subject": "Referral income not credited", "status": "in_progress"},
-            {"category": "Wallet", "priority": "low", "subject": "Cannot connect Trust Wallet", "status": "resolved"},
-        ]
-        for i, s in enumerate(samples):
-            await db.tickets.insert_one({
-                "_id": "TKT-" + secrets.token_hex(4).upper(), "address": ADMIN_DEMO_ADDRESS.lower(),
-                "assigned": None, "created_at": iso(now_utc()), "updated_at": iso(now_utc()), **s,
-            })
-        logger.info("Seeded sample support tickets")
 
 
 @app.on_event("shutdown")

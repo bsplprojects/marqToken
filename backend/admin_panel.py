@@ -219,7 +219,11 @@ def build_admin_router(d):
     # ------------------------- mlm / network -------------------------
     @r.get("/network")
     async def network(root: Optional[str] = None, au: dict = Depends(require("mlm"))):
-        root_addr = root.lower() if root else d.ADMIN_DEMO_ADDRESS.lower()
+        if root:
+            root_addr = root.lower()
+        else:
+            top = await db.members.find_one({"sponsor": None, "is_admin": {"$ne": True}}, sort=[("joined_at", 1)])
+            root_addr = (top or {}).get("_id", "")
         sponsor_tree = await d.build_sponsor_tree(root_addr)
         placement_tree = await d.build_placement_tree(root_addr)
         x = await db.members.find_one({"_id": root_addr})
