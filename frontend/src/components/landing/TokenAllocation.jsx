@@ -1,7 +1,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 // Sample allocation — replace with final MERQ tokenomics.
-const TOTAL_SUPPLY = 1_000_000_000;
+const TOTAL_SUPPLY = 10_000_000;
 const ALLOCATION = [
   { name: "Community & Rewards", pct: 35, color: "#F3BA2F", note: "Member rewards, autopool & incentives" },
   { name: "Liquidity", pct: 20, color: "#d4a017", note: "DEX liquidity on BNB Smart Chain" },
@@ -33,7 +33,7 @@ export const TokenAllocation = () => (
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <div className="font-display text-3xl font-black gold-text">1B</div>
+          <div className="font-display text-3xl font-black gold-text">10M</div>
           <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">MERQ</div>
         </div>
       </div>

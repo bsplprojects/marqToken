@@ -106,3 +106,8 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - New gold M logo: /frontend/public/merqon-mark.png (square), merqon-logo.png (wide), favicon-192.png; BrandLogo + MarketingLanding use it
 - Admins (Atlas): 0xc1aca21abdfdbf0730e73b56fe949cd2703e63ad (env-seeded) + 0x25549df8b08d02740beb4004bb43f5de88b1626f (DB only)
 - Confirmed TechPass sets member status=active (process_techpass + startup backfill)
+
+## Update — MERQ coin & supply
+- MERQ coin image /merq-token.webp (+ merq-token-256.png for MetaMask). MerqCoin component used on dashboard balance and swap MERQ chip; hover spin/glow (.merq-coin-hover)
+- "Add MERQ to MetaMask" (wallet_watchAsset, reads /api/swap/config) in landing Tokenomics card
+- Token allocation total supply = 10,000,000 MERQ (10M)
