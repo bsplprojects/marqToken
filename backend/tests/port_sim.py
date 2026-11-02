@@ -47,7 +47,7 @@ async def main():
         await d.port_withdraw_principal("U", "P2"); print("UNEXPECTED unity withdraw")
     except Exception as e:
         print("unity locked ok:", e.detail)
-    r = await d.port_withdraw_principal("E", "P3"); print("entry principal returned merq:", r["merq"], "(5000)")
+    r = await d.port_withdraw_principal("E", "P3"); print("entry principal returned usd:", r["usd"], "(expect 500 USD)")
     # ranks: root with two legs of 10k each -> M1 one-time 150
     await buy("L1", "entry", 10000, "root")
     await buy("L2", "unity", 10000, "root")
