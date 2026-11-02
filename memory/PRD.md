@@ -94,3 +94,10 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - /admin/wallets (System menu): MERQ/USDT/WBNB contracts, Pancake factory/router, RPC, TechPass / Entry Port / Unity Port receive wallets (Entry/Unity blank = TechPass wallet), swap fee wallet + fee% + slippage; one atomic PUT /api/admin/wallets with validation
 - Treasury panel: key status, derived address, MERQ/BNB balances. Private key stays in server secrets (never in DB/UI)
 - Only active admin: 0xc1aca21abdfdbf0730e73b56fe949cd2703e63ad (test admins disabled)
+
+## Update — Database moved to Atlas & reset
+- App (preview + live) now uses EXTERNAL_MONGO_URL + EXTERNAL_DB_NAME=merqon_database (Atlas); falls back to MONGO_URL/DB_NAME if unset
+- Atlas wiped: kept settings (wallets/contracts, income rules), rule_versions, owner admin. Only member: 0x625a2351446c78b664236747899ba49561a35944 (root sponsor, zero balances)
+- Startup no longer seeds demo root member 0xf39f… or sample tickets; admin network root = oldest non-admin member with no sponsor
+- Admin wallets excluded from admin Members list and Dashboard member KPIs
+- Old built-in DB left untouched as a backup (not used by the app)

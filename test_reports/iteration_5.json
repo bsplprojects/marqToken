@@ -1,0 +1,27 @@
+{
+  "summary": "Verified backend runs on Atlas (EXTERNAL_MONGO_URL, db merqon_database). 11/11 backend tests pass when run serially (-n 0): signup with ref=0x625A... goes into Atlas, not local Mongo, with sponsor=0x625a; signup without ref returns 400 'sponsor required'; /api/ports/status and /api/member/profile work; admin wallets (entry/unity/MERQ) match; port-income-rules and income-rules return 200; /admin/network with no root uses 0x625a as root; admin members and dashboard return 200. UI checks: landing page loads; /register?ref= fills in and verifies the sponsor; /admin/dashboard, /admin/members and /admin/network load (injected merqon_admin_jwt) with no API errors (4xx/5xx) and no page errors. Every temp doc was deleted and the 0x625a doc restored byte-for-byte.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/auth/verify (admin wallet)", "issue": "When an admin wallet logs in via /auth/verify, a members doc is created (is_admin=true, sponsor=null). The real owner 0xc1aca... logged into the live app during testing (17:48 UTC), so Atlas members now has 2 docs: 0x625a... and 0xc1aca.... This doc came from the owner's own login, not from the tests, so it was left in place. It goes against the user's 'members = only 0x625a' expectation."},
+      {"endpoint": "GET /api/admin/dashboard, /api/admin/members", "issue": "Admin wallets are counted and listed as members (total_members includes admin docs). Consider excluding is_admin=true from member KPIs and lists."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_atlas_prod.py", "/app/backend/tests/atlas_temp_admin.py", "/app/backend/tests/atlas_snapshot.py", "/app/test_reports/pytest/atlas_prod.xml"],
+  "action_items": [
+    "Decide whether admin-wallet logins should create a members doc. If not, skip new_member_doc for admins in /auth/verify, or keep it and filter is_admin out of member counts and lists. If the user wants only 0x625a in members, remove the owner's member doc 0xc1aca... (created by the owner's own login).",
+    "pytest.ini forces -n 2 with loadscope. Tests that share Atlas state with module fixtures must be run with -n 0 (the first parallel run had 2 workers whose cleanups removed each other's temp admin, giving 403)."
+  ],
+  "critical_code_review_comments": [
+    "server.py: the startup $pull/disable of ADMIN_DEMO_ADDRESS is harmless on Atlas but no longer needed.",
+    "admin /network default root uses find_one(sponsor None, is_admin != True) sorted by joined_at. This is correct as long as no other sponsorless non-admin member exists.",
+    "port_income accrual writes settings.port_last_accrual on a background loop. This is expected, but it means settings is never byte-identical over time."
+  ],
+  "updated_files": ["/app/backend/tests/test_atlas_prod.py", "/app/backend/tests/atlas_temp_admin.py", "/app/backend/tests/atlas_snapshot.py"],
+  "success_rate": {"backend": "100% (11/11, serial)", "frontend": "100%"},
+  "seed_data_creation": "Temp admins, temp members, nonces and the new signup member were all created in Atlas and all removed with diff-based cleanup. 0x625a member doc restored exactly. Final Atlas state: members=[0x625a..., 0xc1aca... (owner self-login)], admin_users=[owner], admin_addresses=['0xc1aca21abdfdbf0730e73b56fe949cd2703e63ad'], audit_logs/transactions=0, nonces collection empty.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Atlas is production. Use tests/atlas_snapshot.py before and after, run test_atlas_prod.py with -n 0, and use atlas_temp_admin.py setup/cleanup for UI admin JWT. The owner is actively using the live app (last_login updates), so expect owner admin_users.last_login to change."
+}

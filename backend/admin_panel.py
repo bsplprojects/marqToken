@@ -98,7 +98,7 @@ def build_admin_router(d):
     # ------------------------- dashboard -------------------------
     @r.get("/dashboard")
     async def dashboard(au: dict = Depends(require("dashboard"))):
-        members = await db.members.find({}).to_list(10000)
+        members = await db.members.find({"is_admin": {"$ne": True}}).to_list(10000)
         total = len(members)
         active = sum(1 for x in members if x["status"] == "active")
         inactive = total - active
@@ -150,7 +150,7 @@ def build_admin_router(d):
     @r.get("/members")
     async def members(status: Optional[str] = None, search: Optional[str] = None,
                       sort: str = "joined_at", au: dict = Depends(require("members"))):
-        q = {}
+        q = {"is_admin": {"$ne": True}}
         if status and status != "all":
             q["status"] = status
         if search:
