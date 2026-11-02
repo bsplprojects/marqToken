@@ -1,0 +1,34 @@
+{
+  "summary": "Tested the three requested changes on Atlas (production DB). 1) Logo: /merqon-mark.png (456x456) loads with naturalWidth>0 on the landing header, token section and footer, the /app header, the member sidebar, the dashboard hero (64px), the profile (56px), the admin login and the admin sidebar, on desktop and mobile. It uses object-cover, the square mark is not distorted, and the favicon is /favicon-192.png (200 image/png). When testing started, the dev server was serving a STALE index.html: its favicon and apple-touch-icon links still pointed to the old CDN logo (b4d5a2f8bc3a3e78). Restarting the frontend fixed it, and the old URL no longer appears in the DOM on /, /app or /admin/dashboard. 2) Second admin 0x25549df8... is in admin_users as SUPER_ADMIN/active and in settings.admin_addresses. GET /api/auth/lookup returns sponsor_required=false, and POST /api/auth/nonce returns 200. 3) TechPass activation: a temp member signed up with ref=0x625A... and started out inactive. I inserted a confirmed TEST_tp1 doc and restarted the backend; the startup backfill processed it (income_processed=true, activated_at set). /member/profile and /member/dashboard then returned status 'active'. The UI showed the dashboard ACTIVE badge, 'TechPass Active', Profile status Active, and the admin dashboard counted Active=1. Pytest result: 6/6 passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "startup / OWNER_ADMIN_WALLETS", "issue": "The second admin 0x25549df8... exists only in the Atlas DB and is NOT in OWNER_ADMIN_WALLETS in backend/.env. If admin_users or settings are ever reset or re-seeded, only the owner gets re-created. Consider adding it to OWNER_ADMIN_WALLETS (comma-separated)."},
+      {"endpoint": "income_engine.process_techpass", "issue": "Activation only happens when process_techpass runs. A member whose TechPass was processed BEFORE this fix stays inactive, because backfill skips income_processed=true. Atlas currently has 0 techpass docs, so no member is affected today, but a one-time migration would be safer: set status active for every member that has a confirmed techpass."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Favicon", "issue": "Hot reload did not pick up the public/index.html change. The served HTML kept the old CDN favicon until 'supervisorctl restart frontend'. Fixed by the restart; no code change needed.", "affected_selectors": ["link[rel=icon]"]}
+    ],
+    "design_issues": [
+      {"screen": "Admin sidebar header", "issues": ["Brand renders as 'MerqONAdmin' with no space; the admin login shows 'MerqON Admin'. Cosmetic."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_techpass_activation.py", "/app/test_reports/pytest/iter6.xml"],
+  "action_items": [
+    "Optional: add 0x25549df8B08D02740BEB4004BB43f5De88b1626f to OWNER_ADMIN_WALLETS in backend/.env so startup re-seeds it.",
+    "Optional: add a startup migration that activates members with a confirmed techpass and an inactive status.",
+    "Cosmetic: add a space between MerqON and Admin in the AdminLayout sidebar header."
+  ],
+  "critical_code_review_comments": [
+    "process_techpass sets status=active before the idempotency claim. This is harmless (an idempotent $set), but it also re-stamps activated_at every time it is called for the same TP (via refresh_pending/submit). Use $setOnInsert-style logic, or only set activated_at when status != active."
+  ],
+  "updated_files": ["/app/backend/tests/test_techpass_activation.py"],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (after frontend restart for stale favicon)"},
+  "seed_data_creation": "Created temp admin 0x3fafee..., temp member 0x65a64f..., TEST_tp1, and the backfill side-effects: 2 transactions, plus the new collections techpass, matrix, mb_state, income_events and cron_runs. All were removed with a diff-based cleanup (atlas_temp_admin.py cleanup). Before/after comparison: collection counts identical, members docs byte-identical (0x625a, 0xc1aca), admin_users identical (owner and admin2), and settings identical except port_last_accrual (background accrual loop, expected).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Atlas is production. Run `python tests/atlas_snapshot.py /tmp/before.json` and then `python tests/atlas_temp_admin.py setup` (this writes the admin JWT to stdout and snapshots ids). Next run `pytest tests/test_techpass_activation.py -n 0` (it restarts the backend and writes the member JWT to /tmp/tp_member_jwt). Finish with `python tests/atlas_temp_admin.py cleanup`."
+}

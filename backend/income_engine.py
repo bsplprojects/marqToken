@@ -207,6 +207,8 @@ def build_income_engine(d):
                 "tree": tree, "board_members": count, "depth": depth}
 
     async def backfill():
+        for tp in await db.techpass.find({"status": "confirmed"}, {"address": 1}).to_list(100000):
+            await db.members.update_one({"_id": tp["address"], "status": "inactive"}, {"$set": {"status": "active"}})
         for tp in await db.techpass.find({"status": "confirmed", "income_processed": {"$ne": True}}).sort("created_at", 1).to_list(100000):
             await process_techpass(tp)
 

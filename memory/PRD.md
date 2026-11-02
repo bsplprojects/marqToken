@@ -101,3 +101,8 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - Startup no longer seeds demo root member 0xf39f… or sample tickets; admin network root = oldest non-admin member with no sponsor
 - Admin wallets excluded from admin Members list and Dashboard member KPIs
 - Old built-in DB left untouched as a backup (not used by the app)
+
+## Update — Logo, 2nd admin, TechPass activation
+- New gold M logo: /frontend/public/merqon-mark.png (square), merqon-logo.png (wide), favicon-192.png; BrandLogo + MarketingLanding use it
+- Admins (Atlas): 0xc1aca21abdfdbf0730e73b56fe949cd2703e63ad (env-seeded) + 0x25549df8b08d02740beb4004bb43f5de88b1626f (DB only)
+- Confirmed TechPass sets member status=active (process_techpass + startup backfill)
