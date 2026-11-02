@@ -1,4 +1,4 @@
-export const MERQ_COIN = "/merq-token.webp";
+export const MERQ_COIN = "/merq-token.png";
 
 export const MerqCoin = ({ size = 24, className = "", spin = false, testid }) => (
   <img data-testid={testid} src={MERQ_COIN} alt="MERQ" style={{ height: size, width: size }}
