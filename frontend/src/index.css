@@ -143,3 +143,8 @@ body {
 .spark { position: absolute; top: 0; width: 6px; height: 10px; border-radius: 2px; background: #F3BA2F; animation: sparkFall 2.6s ease-in infinite; pointer-events: none; }
 .spark:nth-child(3n) { background: #FDE68A; width: 4px; }
 .spark:nth-child(4n) { background: #34D399; }
+
+@keyframes merqSpin { from { transform: rotateY(0deg); } to { transform: rotateY(360deg); } }
+.merq-coin-hover { transition: box-shadow .4s ease, filter .4s ease; }
+.merq-coin-hover:hover { animation: merqSpin 2.4s linear infinite; box-shadow: 0 0 50px rgba(243,186,47,.55); filter: brightness(1.12); }
+@media (prefers-reduced-motion: reduce) { .merq-coin-hover:hover { animation: none; } }

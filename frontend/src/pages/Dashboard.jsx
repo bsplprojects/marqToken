@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { fmt, shortAddr } from "@/lib/format";
 import { INCOME_GROUPS } from "@/lib/incomes";
 import { useLiveMerq } from "@/lib/useLiveMerq";
-import BrandLogo from "@/components/BrandLogo";
+import { MerqCoin } from "@/components/MerqCoin";
 import { UsdtLogo, BnbLogo, TokenChip } from "@/components/UsdtLogo";
 import { PageHeader } from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
@@ -67,7 +67,7 @@ export default function Dashboard() {
               </span>
             </div>
             <div className="mt-4 flex items-center gap-4" data-testid="merq-balance-display">
-              <BrandLogo size={64} className="ring-2 shadow-[0_0_30px_rgba(243,186,47,0.25)] flex-shrink-0" />
+              <MerqCoin size={64} spin testid="dashboard-merq-coin" className="ring-2 shadow-[0_0_30px_rgba(243,186,47,0.25)]" />
               <span className="font-mono-merq text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight gold-text">
                 {!liveMerq.live ? "0.00" : liveMerq.balance === null ? "…" : fmt(liveMerq.balance, 2)}
               </span>

@@ -5,6 +5,7 @@ import { LiveAlgoChart } from "@/components/landing/LiveAlgoChart";
 import { MarketVolume } from "@/components/landing/MarketVolume";
 import { RevenueStructure } from "@/components/landing/RevenueStructure";
 import { TokenAllocation } from "@/components/landing/TokenAllocation";
+import { AddMerqToMetaMask } from "@/components/landing/AddMerqToMetaMask";
 import {
   Hexagon, ArrowRight, Rocket, Brain, LineChart, Wallet, Coins, Cpu, ShieldCheck,
   Activity, Gauge, Code2, PenTool, PieChart, MessageSquare, Search, Briefcase,
@@ -269,9 +270,10 @@ export default function MarketingLanding() {
         <div className="grid lg:grid-cols-5 gap-5">
           <div className="lg:col-span-2 glass rounded-3xl gold-border p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-amber-400/5 blur-3xl" />
-            <img src="/merq-token.webp" alt="MERQ token" data-testid="tokenomics-token-logo" className="relative h-52 w-52 sm:h-60 sm:w-60 rounded-full object-cover ring-2 ring-amber-400/50 shadow-[0_0_40px_rgba(243,186,47,0.3)] mb-5" />
+            <img src="/merq-token.webp" alt="MERQ token" data-testid="tokenomics-token-logo" className="merq-coin-hover relative h-52 w-52 sm:h-60 sm:w-60 rounded-full object-cover ring-2 ring-amber-400/50 shadow-[0_0_40px_rgba(243,186,47,0.3)] mb-5" />
             <div className="relative font-display text-3xl font-black gold-text">MERQ</div>
             <div className="relative font-mono-merq text-xs uppercase tracking-widest text-slate-500 mt-1">BEP-20 · BNB Smart Chain</div>
+            <AddMerqToMetaMask />
           </div>
           <div className="lg:col-span-3 glass rounded-3xl border border-white/8 p-8">
             <div className="grid sm:grid-cols-2 gap-4">

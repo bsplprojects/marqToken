@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { ArrowDownUp, Loader2, Settings2 } from "lucide-react";
 import { parseAmount, quoteOut, toBps, fmtUnits, executeSwap, GAS_RESERVE } from "@/lib/swap";
 import { formatUnits } from "ethers";
+import { MerqCoin } from "@/components/MerqCoin";
 
 const STEP_LABEL = { fee: "Sending platform fee…", approve: "Approving token…", swap: "Confirm swap in wallet…", confirm: "Waiting for confirmation…" };
 const SLIPPAGES = [0.5, 1, 3];
@@ -20,7 +21,9 @@ const TokenBox = ({ label, symbol, value, onChange, balance, onMax, readOnly, te
       <input data-testid={`${testid}-input`} value={value} readOnly={readOnly} placeholder="0.0" inputMode="decimal"
         onChange={(e) => onChange?.(e.target.value.replace(/[^0-9.]/g, ""))}
         className="flex-1 min-w-0 bg-transparent outline-none font-display text-2xl font-bold text-white placeholder:text-slate-600" />
-      <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-1.5 font-mono-merq text-sm font-semibold text-amber-300">{symbol}</span>
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-400/10 pl-1.5 pr-3 py-1 font-mono-merq text-sm font-semibold text-amber-300">
+        {symbol === "MERQ" && <MerqCoin size={22} testid={`${testid}-merq-coin`} />}{symbol}
+      </span>
     </div>
   </div>
 );
