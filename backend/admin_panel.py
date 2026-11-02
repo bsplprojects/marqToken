@@ -1101,7 +1101,9 @@ def build_admin_router(d):
                 upd[k] = v
         if "enabled" in payload:
             upd["enabled"] = bool(payload["enabled"])
-        if "rpc_url" in payload and str(payload["rpc_url"]).startswith("https://"):
+        if "rpc_url" in payload:
+            if not str(payload["rpc_url"]).startswith("https://"):
+                raise HTTPException(400, "BSC RPC URL must start with https://")
             upd["rpc_url"] = payload["rpc_url"]
         new = {**cur, **upd}
         await db.settings.update_one({"_id": "global"}, {"$set": {"swap": new}})
@@ -1115,5 +1117,40 @@ def build_admin_router(d):
         return {"swap": swap, "techpass_receive_wallet": tp.get("receive_wallet"),
                 "ports": {k: {"receive_wallet": v.get("receive_wallet") or "", "fallback": tp.get("receive_wallet")} for k, v in ports.items()},
                 "treasury": {**tre, "key_set": bool(os.environ.get("TREASURY_PRIVATE_KEY", "").strip())}}
+
+    @r.put("/wallets")
+    async def wallets_put(payload: dict, request: Request, au: dict = Depends(require("token", write=True))):
+        from eth_utils import is_address, to_checksum_address
+        labels = {"merq_token_address": "MERQ Token Contract", "usdt_token_address": "USDT Contract", "wbnb_address": "WBNB Contract",
+                  "router_address": "PancakeSwap Router", "factory_address": "PancakeSwap Factory", "fee_wallet": "Swap Fee Receive Wallet",
+                  "techpass_wallet": "TechPass Sale Receive Wallet", "entry_wallet": "Entry Port Receive Wallet", "unity_wallet": "Unity Port Receive Wallet"}
+        clean = {}
+        for k, label in labels.items():
+            v = (payload.get(k) or "").strip()
+            if v and not is_address(v):
+                raise HTTPException(400, f"{label} is not a valid address")
+            if not v and k == "techpass_wallet":
+                raise HTTPException(400, f"{label} is required")
+            clean[k] = to_checksum_address(v) if v else ""
+        rpc = str(payload.get("rpc_url") or "").strip()
+        if not rpc.startswith("https://"):
+            raise HTTPException(400, "BSC RPC URL must start with https://")
+        nums = {}
+        for k, lo, hi, label in (("fee_pct", 0, 10, "Swap Fee"), ("default_slippage_pct", 0.1, 50, "Default Slippage")):
+            try:
+                nums[k] = float(payload.get(k))
+            except (TypeError, ValueError):
+                raise HTTPException(400, f"{label} must be a number")
+            if not lo <= nums[k] <= hi:
+                raise HTTPException(400, f"{label} must be between {lo} and {hi}%")
+        swap, tp, ports = await d.get_swap_config(), await d.techpass_config(), await d.ports_config()
+        swap.update({k: clean[k] for k in ("merq_token_address", "usdt_token_address", "wbnb_address", "router_address", "factory_address", "fee_wallet")},
+                    rpc_url=rpc, **nums)
+        await db.settings.update_one({"_id": "global"}, {"$set": {
+            "swap": swap, "techpass": {**tp, "receive_wallet": clean["techpass_wallet"]},
+            "ports.entry": {**ports["entry"], "receive_wallet": clean["entry_wallet"]},
+            "ports.unity": {**ports["unity"], "receive_wallet": clean["unity_wallet"]}}})
+        await audit(au, "update_wallets_contracts", "token", None, {**clean, "rpc_url": rpc, **nums}, request)
+        return {"ok": True}
 
     return r

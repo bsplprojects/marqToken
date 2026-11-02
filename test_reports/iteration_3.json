@@ -1,0 +1,36 @@
+{
+  "summary": "Tested the new admin 'Wallets & Contracts' page (/admin/wallets) on both backend and UI. The System nav item opens the route. All 12 fields load with the current config. Saving the Entry receive wallet (0x...dEaD) and the Unity receive wallet (0x1111...) works and both values persist after a reload and in GET /api/admin/wallets. Both were then restored to empty. An invalid address ('abc') in the entry or fee wallet shows an error toast, the backend returns 400, and nothing is saved. The treasury panel shows 'Saved private key is invalid — withdrawals are blocked', the address shows '—', and the private key is never exposed. Code check: ports.py:109 uses cfg.receive_wallet or the TechPass wallet. Regression pages (Dashboard token-rate-card, Income Reports, Income Rules) load. No console errors. All settings (swap/techpass/ports) were restored byte-identical to the pre-test snapshot, and the temp admin was removed. The owner is the only active admin.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/admin/swap", "issue": "An invalid or non-https rpc_url is silently ignored and not saved, but the request returns 200, so the UI says 'saved'. It should return 400."},
+      {"endpoint": "PUT /api/admin/ports/{port}/config", "issue": "The error 'Receive wallet is not a valid wallet address' does not say which port (Entry or Unity) failed."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Wallets save all", "issue": "The save is not atomic. It makes 4 PUTs in sequence (swap -> techpass -> entry -> unity). If the entry/unity wallet is invalid, the swap and techpass changes are already saved but the user only sees an error toast. Validate all fields on the client first (or add one backend endpoint), or say in the toast which part was saved.", "affected_selectors": ["[data-testid='wallets-save']"]},
+      {"flow": "Permissions", "issue": "Page/edit access is gated by the 'token' permission, but the techpass/ports PUTs need 'deposits' write. An admin with token but not deposits access gets a partial save and then a 403.", "affected_selectors": ["[data-testid='wallets-save']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_wallets_contracts.py", "/app/test_reports/pytest/pytest_wallets.xml"],
+  "action_items": [
+    "Optional: make Save all atomic, or validate all addresses on the client before the first PUT",
+    "Optional: align the permission check (canEdit should also need deposits write) or move all writes behind one endpoint",
+    "Optional: return 400 for an invalid rpc_url instead of silently ignoring it"
+  ],
+  "critical_code_review_comments": [
+    "WalletsContracts.jsx save(): sequential non-transactional PUTs can lead to a partial save",
+    "admin_panel.py swap_update: rpc_url validation fails silently",
+    "Before testing, the settings.global techpass/ports sub-docs were null (code defaults). The first UI save writes the defaults into the DB, which freezes them against future code-default changes. This is acceptable but worth knowing."
+  ],
+  "updated_files": ["/app/backend/tests/test_wallets_contracts.py"],
+  "success_rate": {"backend": "100% (12/12)", "frontend": "100%"},
+  "test_credentials": "Temp SUPER_ADMIN created with eth_account (see test file fixture); removed afterwards.",
+  "seed_data_creation": "None persisted. Settings were restored exactly (techpass/ports unset, swap reset to the original snapshot).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_wallets_contracts.py snapshots and restores settings.swap/techpass/ports and cleans up the temp admin. For UI tests, set localStorage merqon_admin_jwt. The env TREASURY_PRIVATE_KEY is invalid, so the expected treasury status is 'Saved private key is invalid'."
+}

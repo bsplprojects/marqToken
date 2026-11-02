@@ -47,10 +47,7 @@ export default function WalletsContracts() {
 
   const save = async () => {
     try {
-      await adminApi.put("/swap", { ...Object.fromEntries(SWAP_KEYS.map((k) => [k, form[k]])), fee_pct: Number(form.fee_pct), default_slippage_pct: Number(form.default_slippage_pct) });
-      await adminApi.put("/techpass/config", { receive_wallet: form.techpass_wallet });
-      await adminApi.put("/ports/entry/config", { receive_wallet: form.entry_wallet });
-      await adminApi.put("/ports/unity/config", { receive_wallet: form.unity_wallet });
+      await adminApi.put("/wallets", { ...form, fee_pct: Number(form.fee_pct), default_slippage_pct: Number(form.default_slippage_pct) });
       toast.success("Wallets & contracts saved");
       setForm(null);
       qc.invalidateQueries({ queryKey: ["adm-wallets"] });

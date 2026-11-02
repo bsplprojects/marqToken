@@ -89,3 +89,8 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - All data copied to user's Atlas (EXTERNAL_MONGO_URL, db merqon_database, 539 docs). App still runs on local MONGO_URL
 - BLOCKED: TREASURY_PRIVATE_KEY invalid (40 chars), so on-chain withdrawals are off
 - Backlog: smart contracts, chain monitoring/reconciliation, full UI test run of new screens
+
+## Update — Wallets & Contracts admin page
+- /admin/wallets (System menu): MERQ/USDT/WBNB contracts, Pancake factory/router, RPC, TechPass / Entry Port / Unity Port receive wallets (Entry/Unity blank = TechPass wallet), swap fee wallet + fee% + slippage; one atomic PUT /api/admin/wallets with validation
+- Treasury panel: key status, derived address, MERQ/BNB balances. Private key stays in server secrets (never in DB/UI)
+- Only active admin: 0xc1aca21abdfdbf0730e73b56fe949cd2703e63ad (test admins disabled)
