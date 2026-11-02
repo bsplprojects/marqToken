@@ -269,7 +269,7 @@ export default function MarketingLanding() {
         <div className="grid lg:grid-cols-5 gap-5">
           <div className="lg:col-span-2 glass rounded-3xl gold-border p-8 flex flex-col items-center justify-center text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-amber-400/5 blur-3xl" />
-            <img src={LOGO} alt="MERQ" className="relative h-28 w-28 rounded-xl object-cover bg-black ring-2 ring-amber-400/40 mb-5" />
+            <img src="/merq-token.webp" alt="MERQ token" data-testid="tokenomics-token-logo" className="relative h-52 w-52 sm:h-60 sm:w-60 rounded-full object-cover ring-2 ring-amber-400/50 shadow-[0_0_40px_rgba(243,186,47,0.3)] mb-5" />
             <div className="relative font-display text-3xl font-black gold-text">MERQ</div>
             <div className="relative font-mono-merq text-xs uppercase tracking-widest text-slate-500 mt-1">BEP-20 · BNB Smart Chain</div>
           </div>
