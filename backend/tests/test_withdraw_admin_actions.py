@@ -117,3 +117,54 @@ class TestNoCooldown:
         d1 = new_wd(10); d2 = new_wd(10)
         assert d1["status"] == d2["status"] == "payout_failed"
         assert avail() == pytest.approx(a0 - 20)
+
+
+# Iteration 9: approve is atomic; approve vs reject race; reject not allowed from 'approved'
+def _pending_wd(amount=10):
+    wid = new_wd(amount)["request_id"]  # auto -> payout_failed (0 MERQ treasury)
+    assert act(wid, "hold").status_code == 200
+    assert act(wid, "release").status_code == 200
+    assert DB.withdrawals.find_one({"_id": wid})["status"] == "pending"
+    return wid
+
+
+class TestApproveRejectRace:
+    @pytest.mark.parametrize("run", range(6))
+    def test_approve_vs_reject(self, run):
+        a0 = avail()
+        wid = _pending_wd(10)
+        a1 = avail()
+        assert a1 == pytest.approx(a0 - 10)
+        order = ["approve", "reject"] if run % 2 == 0 else ["reject", "approve"]
+        with ThreadPoolExecutor(2) as ex:
+            res = dict(zip(order, ex.map(lambda a: act(wid, a), order)))
+        codes = {k: v.status_code for k, v in res.items()}
+        w = DB.withdrawals.find_one({"_id": wid})
+        a2 = avail()
+        print(f"run {run}: codes={codes} final={w['status']} refund={a2 - a1} tx_hash={w.get('tx_hash')}")
+        assert not w.get("tx_hash"), "payout must never have a tx hash (0 MERQ treasury)"
+        if codes["reject"] == 200 and codes["approve"] == 200:
+            # only legitimate if approve fully finished (payout_failed) before reject ran
+            assert w["status"] == "rejected" and res["approve"].json()["status"] == "payout_failed"
+            assert a2 == pytest.approx(a0)
+        elif codes["reject"] == 200:
+            assert codes["approve"] == 400
+            assert w["status"] == "rejected" and a2 == pytest.approx(a0)
+            assert not w.get("approved_by"), "approve must not have transitioned after reject"
+        else:
+            assert codes["approve"] == 200 and codes["reject"] == 400
+            assert w["status"] == "payout_failed" and a2 == pytest.approx(a1)  # no refund
+
+    def test_reject_from_approved_400(self):
+        wid = _pending_wd(10)
+        a1 = avail()
+        DB.withdrawals.update_one({"_id": wid, "address": ENV["member"]}, {"$set": {"status": "approved"}})
+        r = act(wid, "reject")
+        assert r.status_code == 400, r.text
+        assert DB.withdrawals.find_one({"_id": wid})["status"] == "approved"
+        assert avail() == pytest.approx(a1)
+        # 'processing' also not rejectable
+        DB.withdrawals.update_one({"_id": wid, "address": ENV["member"]}, {"$set": {"status": "processing"}})
+        assert act(wid, "reject").status_code == 400
+        assert avail() == pytest.approx(a1)
+        DB.withdrawals.update_one({"_id": wid, "address": ENV["member"]}, {"$set": {"status": "payout_failed"}})
