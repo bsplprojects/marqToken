@@ -148,7 +148,7 @@ export default function Landing() {
                   onClick={() => doConnect("metamask")}
                   className="w-full flex items-center justify-between rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-4 transition-colors disabled:opacity-60"
                 >
-                  <span className="flex items-center gap-3"><Wallet className="h-5 w-5" /> MetaMask / Injected</span>
+                  <span className="flex items-center gap-3"><Wallet className="h-5 w-5" /> Connect Wallet</span>
                   <ArrowRight className="h-4 w-4" />
                 </button>
                 {!hasMetaMask() && (

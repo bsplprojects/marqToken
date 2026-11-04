@@ -58,7 +58,7 @@ DEFAULT_SETTINGS = {
     "withdraw_fee_pct": 5.0,
     "protocol_fee_pct": 1.0,
     "daily_withdraw_limit": 5000.0,
-    "withdraw_cooldown_hours": 24,
+    "withdraw_cooldown_hours": 0,
     "autopool_entry": 50.0,
     "autopool_capacity": 3,
     "autopool_reward": 120.0,
@@ -67,7 +67,7 @@ DEFAULT_SETTINGS = {
     "deposit_packages": [100, 500, 1000, 5000],
     "starting_wallet_balance": 10000.0,
     "paused": False,
-    "withdraw_auto_approve_under": 1000.0,
+    "withdraw_auto_approve_under": 5000.0,
     "platform_name": "MerqON",
     "timezone": "UTC",
     "maintenance_mode": False,
@@ -803,7 +803,7 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
     used = m["withdrawn_today"] if m.get("withdrawn_today_date") == today else 0.0
     if used + amt > settings["daily_withdraw_limit"]:
         raise HTTPException(400, f"Exceeds daily limit of {settings['daily_withdraw_limit']} USDT")
-    if m.get("last_withdraw_at"):
+    if m.get("last_withdraw_at") and amt > float(settings.get("withdraw_auto_approve_under", 5000)):
         delta = now_utc() - parse_iso(m["last_withdraw_at"])
         if delta < timedelta(hours=settings["withdraw_cooldown_hours"]):
             hrs = settings["withdraw_cooldown_hours"] - delta.total_seconds() / 3600.0

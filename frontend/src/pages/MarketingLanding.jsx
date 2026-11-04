@@ -105,7 +105,7 @@ export default function MarketingLanding() {
           </nav>
           <Link to="/app" data-testid="nav-launch-app"
             className="group hidden sm:flex items-center gap-2 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-2.5 text-sm transition-colors">
-            <Rocket className="h-4 w-4" /> Launch App
+            <Rocket className="h-4 w-4" /> Start Now
             <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>
           <button data-testid="mobile-menu-toggle" onClick={() => setMenu(true)}
@@ -137,7 +137,7 @@ export default function MarketingLanding() {
           </nav>
           <Link to="/app" onClick={() => setMenu(false)} data-testid="mobile-launch-app"
             className="mt-6 flex items-center justify-center gap-2 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-3 transition-colors">
-            <Rocket className="h-4 w-4" /> Launch App
+            <Rocket className="h-4 w-4" /> Start Now
           </Link>
         </aside>
       </div>
@@ -169,7 +169,7 @@ export default function MarketingLanding() {
             <div className="flex flex-wrap gap-4 mt-9">
               <Link to="/app" data-testid="hero-launch-app"
                 className="group flex items-center gap-2 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-7 py-3.5 transition-colors">
-                <Rocket className="h-5 w-5" /> Launch App
+                <Rocket className="h-5 w-5" /> Start Now
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
               <a href="#about" className="flex items-center gap-2 rounded-full border border-white/15 bg-white/5 hover:border-amber-400/40 text-white font-medium px-7 py-3.5 transition-colors">

@@ -47,7 +47,7 @@ export default function AdminLogin() {
           {!wallet ? (
             <>
               <Btn testid="admin-connect-metamask" className="w-full" onClick={connect} disabled={busy}>
-                <Wallet className="h-4 w-4" /> MetaMask / Injected <ArrowRight className="h-4 w-4 ml-auto" />
+                <Wallet className="h-4 w-4" /> Connect Wallet <ArrowRight className="h-4 w-4 ml-auto" />
               </Btn>
             </>
           ) : (
