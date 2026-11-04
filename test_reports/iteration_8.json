@@ -1,0 +1,61 @@
+{
+  "summary": "Retested the iteration_7 fixes on Atlas (production) with a temp member and a temp SUPER_ADMIN; all temp data was deleted afterwards. Treasury MERQ was confirmed 0 before testing. New pytest tests/test_withdraw_admin_actions.py: 9/9 passed. Quote amount=-5 and amount=0 return 400 ('Enter an amount greater than 0'). State machine works: release from payout_failed -> 400; hold from payout_failed OK; hold again -> 400; release -> pending; release again -> 400; hold and release from pending OK; reject refunds once; second reject -> 400 with no extra refund; release/hold/approve/retry on a rejected withdrawal all -> 400; tx status set to rejected. 8 concurrent rejects -> exactly one 200 and seven 400, refunded once. Two immediate 10 USDT withdrawals both auto-process (no cooldown). Both auto-approve defaults are now 5000 (code review). Sims (local DB): gm_global_sim and engine_sim outputs are identical to iteration_7 (GM single root with level order A,B -> a1,b1 under A -> a2,b2 under B -> a3,b3 under a1; partner onboarding 3720; MB 400 net / 300 saved). New gm_concurrency_sim: 10 concurrent process_techpass_income with an existing root, 3 runs: no node has >2 children, no orphans or phantom children. UI: admin label reads 'NEEDS APPROVAL ABOVE (USDT)'; sidebar-merq-price shows '$0.500204'; Team Volume shows '$0'; the income stream row shows only '+60.00 USDT' (no duplicate $); the dashboard coin and swap chip use /merq-token-256.png (naturalWidth 256); landing tokenomics-token-logo is still /merq-token.png (520). NEW HIGH bug found: an approve and a reject sent at the same time can both succeed, so the balance is refunded and the payout can still go out.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/admin/withdrawals/{wid}/action (approve vs reject race)",
+        "issue": "approve is still non-atomic. It does find_one, checks the status, then runs update_one({_id}, {$set: {status: 'approved'}}) with no status filter. Reproduced 2/4 times by firing approve and reject at the same time on a pending withdrawal: both returned 200, the reject refunded the balance (available delta 0), and the final status was payout_failed (not rejected). In production with a funded treasury, MERQ would be sent after the refund (double-spend), and 'retry' can also pay it later. reject is also allowed from 'approved', the brief window before process_payout claims the doc, which is a second race path.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "income_engine.place (root creation)",
+        "issue": "In an empty board, concurrent first purchases both try to insert_one the owner root -> DuplicateKeyError. Seen 1 time in 3 runs in gm_concurrency_sim with no pre-existing root; that member's GM placement and the rest of its income processing were aborted. Use update_one(upsert=True) / $setOnInsert for the root. Atlas already has a GM root, so there is low impact today."
+      },
+      {
+        "endpoint": "income_engine.place",
+        "issue": "1) If all 20 claim attempts fail, the node is still inserted with a non-null parent that is not in that parent's children (an orphan). 2) The 'already placed' find_one check is not atomic, so two concurrent place() calls for the same addr can both $push addr before the second insert_one fails, leaving a phantom child. Insert the node first (it acts as a unique lock on _id) or set parent only after a successful claim."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Admin Withdrawals - Treasury Payout Wallet card",
+        "issues": [
+          "The card title 'Treasury Payout Wallet' is indented about 16px more than the 'SENDING WALLET' content below it (cosmetic)."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_withdraw_admin_actions.py",
+    "/app/backend/tests/gm_concurrency_sim.py",
+    "/app/test_reports/pytest/iter8.xml"
+  ],
+  "action_items": [
+    "HIGH: Make approve atomic. Use res = update_one({_id: wid, status: {$in: ['pending','under_review']}}, {$set: {status: 'approved', approved_by}}) and return 400 if not modified, before calling process_payout. Remove 'approved' from the statuses that reject and hold accept, since approved is transient. Re-run the race: concurrent approve and reject must give exactly one success.",
+    "MINOR: In income_engine.place, upsert the board root to avoid DuplicateKeyError, and avoid orphan/phantom nodes (insert the node doc first as a lock, or only set parent after a successful $push)."
+  ],
+  "critical_code_review_comments": [
+    "admin_panel.withdrawal_action approve/retry: process_payout atomically claims approved/payout_failed docs, but the approve transition itself is unguarded. That is the root cause of the race above.",
+    "withdrawal_action reads w before the update and reuses w['amount'] for the refund. This is fine (amount is immutable), but the refund and the tx status update are not in a transaction; acceptable for an MVP.",
+    "/api/admin/me writes last_login on every call (a read endpoint with a write side effect)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_withdraw_admin_actions.py",
+    "/app/backend/tests/gm_concurrency_sim.py"
+  ],
+  "success_rate": {
+    "backend": "90% (9/9 pytest plus sims pass; 1 new HIGH race found outside the requested fix list)",
+    "frontend": "100% (all 6 requested UI checks pass)"
+  },
+  "seed_data_creation": "Temp admin 0x9bd447fd..., temp member 0x9b3fe107... (via atlas_withdraw_env.py), TEST_TP techpass, 1 TEST_TX income tx, 8 withdrawals with their txs, and 22 audit logs. All deleted by atlas_withdraw_env.py cleanup; count diffs vs setup: none. Before/after snapshot: members, withdrawals (WD-746D2153C2 untouched) and settings identical, except port_last_accrual (background accrual loop) and admin_users[owner 0xc1aca].last_login=07:06:07. That timestamp is set by /api/admin/me; my browser session used only the temp admin JWT, so it is most likely a real owner session running at the same time.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Flow: python tests/atlas_snapshot.py /tmp/before.json; python /tmp/treas.py-style check that the treasury MERQ is 0 (payout.treasury_status with {**DEFAULT_SETTINGS['swap'], **settings.global.swap}); python tests/atlas_withdraw_env.py setup; pytest tests/test_withdraw_admin_actions.py -n 0; race check: create a withdrawal, hold then release to pending, then fire approve and reject concurrently (2 threads) x4 and assert that exactly one succeeds and that the final status is consistent with available; python tests/atlas_withdraw_env.py cleanup. Note that test_withdraw_usdt.py assumes available=50 at start, so run it on a fresh setup. Sims run only on localhost test DBs: gm_global_sim.py, engine_sim.py, gm_concurrency_sim.py.",
+  "rca of the issue": "Race: T1 approve reads status=pending -> T2 reject runs the atomic pending->rejected and refunds -> T1 runs the unconditional update_one sets status=approved -> process_payout claims 'approved' -> payout attempted (failed only because the treasury has 0 MERQ, leaving payout_failed, which is retryable). Fix: guard the approve transition with a status filter, the same way reject/hold/release are now guarded."
+}

@@ -56,9 +56,8 @@ def build_income_engine(d):
         if anchor is None:
             root = await owner_root()
             if root and root != addr:
-                if not await db.matrix.find_one({"_id": f"{board}:{root}"}):
-                    await db.matrix.insert_one({"_id": f"{board}:{root}", "board": board, "member": root,
-                                                "parent": None, "children": [], "created_at": d.iso(d.now_utc())})
+                await db.matrix.update_one({"_id": f"{board}:{root}"}, {"$setOnInsert": {
+                    "board": board, "member": root, "parent": None, "children": [], "created_at": d.iso(d.now_utc())}}, upsert=True)
                 anchor = root
         parent = None
         for _ in range(20 if anchor else 0):
@@ -75,6 +74,9 @@ def build_income_engine(d):
                                              {"$push": {"children": addr}})
             if res.modified_count:
                 break
+        else:
+            if anchor:
+                raise RuntimeError(f"Could not find an open {board} slot for {addr}")
         await db.matrix.insert_one({"_id": pid, "board": board, "member": addr, "parent": parent, "children": [],
                                     "created_at": d.iso(d.now_utc())})
         return parent

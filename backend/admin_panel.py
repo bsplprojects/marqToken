@@ -300,12 +300,15 @@ def build_admin_router(d):
             if w["status"] not in ok_from:
                 raise HTTPException(400, "This request can't be " + ("approved" if act == "approve" else "retried") + " now")
             if act == "approve":
-                await db.withdrawals.update_one({"_id": wid}, {"$set": {"status": "approved", "approved_by": au["_id"]}})
+                res = await db.withdrawals.update_one({"_id": wid, "status": {"$in": list(ok_from)}},
+                                                      {"$set": {"status": "approved", "approved_by": au["_id"]}})
+                if not res.modified_count:
+                    raise HTTPException(400, "This request can't be approved now")
             res = await d.process_payout(d, wid)
             await audit(au, f"withdrawal_{act}", "withdrawals", wid, {"amount": w["amount"], "result": res["status"]}, request)
             return {"ok": True, "status": res["status"], "reason": res.get("reason"), "tx_hash": res.get("tx_hash")}
         elif act == "reject":
-            res = await db.withdrawals.update_one({"_id": wid, "status": {"$in": ["pending", "under_review", "approved", "payout_failed"]}},
+            res = await db.withdrawals.update_one({"_id": wid, "status": {"$in": ["pending", "under_review", "payout_failed"]}},
                                                   {"$set": {"status": "rejected", "reason": body.reason}})
             if not res.modified_count:
                 raise HTTPException(400, "This request can't be rejected now")
