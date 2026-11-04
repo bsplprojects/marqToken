@@ -36,7 +36,7 @@ export const TreasuryPanel = ({ canEdit }) => {
           </div>
         </div>
         <div>
-          <label className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">Needs approval above (MERQ)</label>
+          <label className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">Needs approval above (USDT)</label>
           <input data-testid="wd-auto-approve-input" type="number" disabled={!canEdit} value={limit} onChange={(e) => setLimit(e.target.value)}
             className="mt-1 w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 font-mono-merq text-sm text-white outline-none focus:border-amber-400/40" />
         </div>

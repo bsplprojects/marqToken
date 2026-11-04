@@ -14,7 +14,7 @@ class PayoutError(Exception):
 
 
 def treasury_account():
-    pk = os.environ.get("TREASURY_PRIVATE_KEY", "").strip()
+    pk = os.environ.get("TREASURY_PRIVATE_KEY", "").strip().strip('"').strip("'").strip()
     if not pk:
         return None
     try:

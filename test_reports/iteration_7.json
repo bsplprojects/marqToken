@@ -1,0 +1,46 @@
+{
+  "summary": "Tested the USDT income / MERQ withdrawal changes, the global GM tree, the token icon, the Start Now rename and the Connect Wallet rename on Atlas (production) with a temp member and a temp admin; all temp data was removed afterwards. Sims (local DB): engine_sim shows A partner onboarding = 3720 USD (62 x 60), MB paid 400 / saved 300, all credited as USD into available/income/income_usd. port_sim values are all correct USD. gm_global_sim: GM has a single root and fills level-by-level in purchase order across teams (A,B -> a1,b1 under A -> a2,b2 under B -> a3,b3 under a1); MB1 stays under sponsor (b1 under B). Atlas GM tree has a single root (0xc1aca). Backend pytest 7/7 passed: quote 20 -> fee 1, net_usdt 19, merq_receive=19/price, merq_fee=1/price, fee_pct 5; <10 rejected (Minimum), >available rejected; 20 USDT request auto-processed -> payout_failed with 'Treasury wallet does not hold enough MERQ' (treasury MERQ=0, verified before testing); a second immediate request has no cooldown; available decreased 50->30->20; withdrawal doc stores currency USDT, merq_price, net (MERQ), fee_merq; history and admin list OK. UI: /withdraw shows label 'Amount (USDT)', available in USDT, quote rows Amount/Fee(5%)/Net amount in USDT, MERQ rate and You Receive in MERQ (withdraw-merq-receive); submit gives a queued toast and the balance updates; the mobile layout works. /swap is USDT<->MERQ (flip works) and the MERQ chip shows /merq-token.png. The dashboard coin loads. Landing: 3 Start Now elements, no 'Launch App'; tokenomics-token-logo /merq-token.png has naturalWidth 520; the Add MERQ to MetaMask button is present (shows a 'MetaMask not found' toast when no wallet). /app, /register and /admin show 'Connect Wallet', no 'MetaMask / Injected'. The income stream page shows USDT. Admin Income Reports has a USDT column. Admin Withdrawals columns are Amount (USDT), Fee (USDT), Sends (MERQ). Found 1 HIGH backend bug: admin withdrawal reject can be repeated and refunds the balance every time.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/admin/withdrawals/{wid}/action (reject)", "issue": "Rejecting a withdrawal that is already 'rejected' succeeds again and refunds w.amount to available a second time. Reproduced: available 0 -> 10 -> 20 for a single 10 USDT withdrawal. 'release' also moves a rejected withdrawal back to 'pending', so it can then be approved and paid AFTER the refund (a double-spend). The reject path is also non-atomic: it does find_one and then an unconditional update, so a double-click or concurrent requests can double-refund.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "GET /api/withdraw/quote", "issue": "Negative and zero amounts are not validated. amount=-5 returns negative fee and negative merq_receive. Add amount>0 validation (400)."},
+      {"endpoint": "server.py withdraw_request", "issue": "The auto-approve threshold default is inconsistent: the cooldown check uses settings.get('withdraw_auto_approve_under', 5000) but the auto check uses the default 1000. Atlas has 5000 set, so there is no impact today; align both defaults to 5000."},
+      {"endpoint": "income_engine.place (GM global)", "issue": "Every GM placement does a BFS from the global root using one find_one per node, so the cost grows with company size. There is also no lock: concurrent purchases can pick the same parent and give it more than 2 children. Consider a 'next open slot' pointer or an atomic $push guarded by a children size check."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Admin Withdrawals - Treasury Payout Wallet", "issue": "The field label reads 'NEEDS APPROVAL ABOVE (MERQ)', but withdrawal limits and the threshold are now in USDT. It should read '(USDT)'.", "selector": "admin/pages/Withdrawals.jsx", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Member sidebar price widget", "issues": ["'MERQ PRICE' label touches the value, and the price is unrounded: '$0.5002043575089995'. Format to about 4-6 decimals."]},
+      {"screen": "Income stream history row", "issues": ["Shows '+60.00 USDT' followed by '$60.00'. The amount is now USD, so the second value is redundant."]},
+      {"screen": "Dashboard", "issues": ["The 'Team Volume' card still shows the unit as MERQ ('0 MERQ'). Check whether it should be USDT."]},
+      {"screen": "Withdraw amount input", "issues": ["The native number spinner renders with a white background on the dark theme."]},
+      {"screen": "Admin Income Reports", "issues": ["Date filters use the browser's native mm/dd/yyyy picker and a native select, not the shadcn calendar/select."]},
+      {"screen": "Assets", "issues": ["/merq-token.png is 435KB and is used at 22-64px sizes (swap chip, dashboard). Use merq-token-256.png (134KB) or a webp for small sizes."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_withdraw_usdt.py", "/app/backend/tests/atlas_withdraw_env.py", "/app/test_reports/pytest/iter7.xml"],
+  "action_items": [
+    "HIGH: Make withdrawal reject atomic and allowed only from pending/under_review/payout_failed, e.g. find_one_and_update({_id, status: {$in: [...]}}, {$set: {status: 'rejected'}}) and refund only if a doc was matched. Restrict 'release' to under_review -> pending.",
+    "Change the admin Withdrawals label 'Needs approval above (MERQ)' to USDT.",
+    "Validate amount > 0 in GET /api/withdraw/quote.",
+    "Align the withdraw_auto_approve_under defaults (1000 vs 5000) in withdraw_request.",
+    "Round the sidebar MERQ price and fix the label spacing. Remove the duplicate $ value in the income history rows. Check the Team Volume unit."
+  ],
+  "critical_code_review_comments": [
+    "admin_panel.withdrawal_action reject/hold/release perform no state-transition checks, apart from reject blocking sent/completed/processing.",
+    "process_payout: if treasury_status returns merq_balance=None (RPC error), it proceeds to send_merq. That path re-checks the balance, so it is safe, but the fee transfer can fail after the net was sent; that case is recorded only in fee_error, with no retry path.",
+    "The GM global BFS in place() is O(N) DB round-trips per purchase and is not concurrency-safe."
+  ],
+  "updated_files": ["/app/backend/tests/test_withdraw_usdt.py", "/app/backend/tests/atlas_withdraw_env.py"],
+  "success_rate": {"backend": "100% of requested checks (7/7 pytest + 3 sims); 1 HIGH bug found outside the requested scope (admin reject double refund)", "frontend": "~95% (all requested items pass; 1 label still says MERQ)"},
+  "seed_data_creation": "Created temp admin 0xdc5039..., temp member 0xedb255... (signed up while temporarily in admin_addresses, so no sponsor and no upline count changes on real members), TEST_TP_edb255c7 techpass (income_processed=true, so no upline income), 1 TEST income transaction, 3 withdrawals and their transactions, and 3 audit logs. All were deleted by `python tests/atlas_withdraw_env.py cleanup`. Before/after snapshot: real members byte-identical, admin_users identical, withdrawals count 1 (WD-746D2153C2 untouched). Only differences: settings.port_last_accrual and cron_runs +1, both from the background accrual loop.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Atlas is production. Flow: `python tests/atlas_snapshot.py /tmp/before.json`; `python tests/atlas_withdraw_env.py setup` (writes /tmp/wd_env.json with member_jwt/admin_jwt; the member has available=50, status active and a confirmed TP); `pytest tests/test_withdraw_usdt.py -n 0`; then `python tests/atlas_withdraw_env.py cleanup`. Check that the treasury MERQ balance is 0 before any withdrawal test (/tmp/treas.py-style check via payout.treasury_status). For the reject fix: create a temp withdrawal, reject it twice, and assert that the second reject returns 400 and available is refunded only once."
+}

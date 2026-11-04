@@ -61,8 +61,8 @@ def build_income_engine(d):
                                                 "parent": None, "children": [], "created_at": d.iso(d.now_utc())})
                 anchor = root
         parent = None
-        if anchor:
-            q = deque([anchor])
+        for _ in range(20 if anchor else 0):
+            q, parent = deque([anchor]), None
             while q:
                 cur = q.popleft()
                 node = await db.matrix.find_one({"_id": f"{board}:{cur}"})
@@ -70,10 +70,13 @@ def build_income_engine(d):
                     parent = cur
                     break
                 q.extend(node["children"])
+            # claim the slot atomically so concurrent purchases can't overfill a node
+            res = await db.matrix.update_one({"_id": f"{board}:{parent}", "children.1": {"$exists": False}},
+                                             {"$push": {"children": addr}})
+            if res.modified_count:
+                break
         await db.matrix.insert_one({"_id": pid, "board": board, "member": addr, "parent": parent, "children": [],
                                     "created_at": d.iso(d.now_utc())})
-        if parent:
-            await db.matrix.update_one({"_id": f"{board}:{parent}"}, {"$push": {"children": addr}})
         return parent
 
     async def ancestors(board: str, addr: str, depth: int):

@@ -769,6 +769,8 @@ class WithdrawReq(BaseModel):
 
 async def withdraw_calc(amount: float, settings: dict):
     """USDT amount -> fee (USDT) and MERQ to send at the live rate."""
+    if not amount or amount <= 0:
+        raise HTTPException(400, "Enter an amount greater than 0")
     price, source, _ = await _admin_deps.live_price(await get_swap_config(), settings)
     if price <= 0:
         raise HTTPException(503, "MERQ price unavailable")
@@ -815,7 +817,7 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
     })
     if not res.modified_count:
         raise HTTPException(400, "Insufficient available balance")
-    auto = amt <= float(settings.get("withdraw_auto_approve_under", 1000))
+    auto = amt <= float(settings.get("withdraw_auto_approve_under", 5000))
     wid = "WD-" + secrets.token_hex(5).upper()
     status = "approved" if auto else "pending"
     wdoc = {

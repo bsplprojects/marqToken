@@ -77,7 +77,7 @@ export default function Layout({ children }) {
         <div className="glass rounded-xl p-3 mb-3">
           <div className="flex items-center justify-between">
             <span className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">MERQ Price</span>
-            <span className="font-mono-merq text-sm text-amber-400">${price?.merq_usd ?? "0.00"}</span>
+            <span data-testid="sidebar-merq-price" className="font-mono-merq text-sm text-amber-400 ml-2">${price?.merq_usd != null ? Number(price.merq_usd).toLocaleString(undefined, { maximumFractionDigits: 6 }) : "0.00"}</span>
           </div>
           {price?.bnb_usd && (
             <div className="flex items-center justify-between mt-1">

@@ -44,7 +44,6 @@ export default function IncomeStream() {
               {data.history.map((h) => (
                 <div key={h.id} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-4 py-3">
                   <span className="font-mono-merq text-emerald-400 font-semibold">+{fmt(h.amount)} USDT</span>
-                  {h.usd != null && <span className="font-mono-merq text-xs text-slate-300">${fmt(h.usd)}</span>}
                   {(h.board || h.level || h.rank || h.port) && <span className="rounded-full border border-amber-400/25 px-2 py-0.5 font-mono-merq text-[10px] uppercase text-amber-300">{h.board || h.rank || (h.level ? `Level ${h.level}` : `${h.port} port`)}</span>}
                   {h.from && <span className="font-mono-merq text-[11px] text-slate-500">from {h.from.slice(0, 6)}…{h.from.slice(-4)}</span>}
                   <span className="ml-auto font-mono-merq text-[11px] text-slate-500">{new Date(h.created_at).toLocaleString()}</span>

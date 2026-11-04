@@ -305,15 +305,21 @@ def build_admin_router(d):
             await audit(au, f"withdrawal_{act}", "withdrawals", wid, {"amount": w["amount"], "result": res["status"]}, request)
             return {"ok": True, "status": res["status"], "reason": res.get("reason"), "tx_hash": res.get("tx_hash")}
         elif act == "reject":
-            if w["status"] in ("completed", "sent", "processing"):
-                raise HTTPException(400, "Cannot reject a withdrawal that was already sent")
-            await db.withdrawals.update_one({"_id": wid}, {"$set": {"status": "rejected", "reason": body.reason}})
+            res = await db.withdrawals.update_one({"_id": wid, "status": {"$in": ["pending", "under_review", "approved", "payout_failed"]}},
+                                                  {"$set": {"status": "rejected", "reason": body.reason}})
+            if not res.modified_count:
+                raise HTTPException(400, "This request can't be rejected now")
             await db.members.update_one({"_id": w["address"]}, {"$inc": {"available": w["amount"]}})
             await db.transactions.update_one({"meta.request_id": wid}, {"$set": {"status": "rejected"}})
         elif act == "hold":
-            await db.withdrawals.update_one({"_id": wid}, {"$set": {"status": "under_review", "reason": body.reason}})
+            res = await db.withdrawals.update_one({"_id": wid, "status": {"$in": ["pending", "approved", "payout_failed"]}},
+                                                  {"$set": {"status": "under_review", "reason": body.reason}})
+            if not res.modified_count:
+                raise HTTPException(400, "This request can't be put on hold now")
         elif act == "release":
-            await db.withdrawals.update_one({"_id": wid}, {"$set": {"status": "pending"}})
+            res = await db.withdrawals.update_one({"_id": wid, "status": "under_review"}, {"$set": {"status": "pending"}})
+            if not res.modified_count:
+                raise HTTPException(400, "Only requests on hold can be released")
         else:
             raise HTTPException(400, "Invalid action")
         await audit(au, f"withdrawal_{act}", "withdrawals", wid,
