@@ -972,6 +972,24 @@ def build_admin_router(d):
         await audit(au, "set_token_rate", "settings", None, {"old": old, "new": price}, request)
         return {**(await rate_info()), "admin_price": price, "updated_at": now}
 
+    # ------------------------- global momentum tree -------------------------
+    @r.get("/gm-tree")
+    async def gm_tree(root: Optional[str] = None, au: dict = Depends(require("mlm"))):
+        top = await db.matrix.find_one({"board": "GM", "parent": None}, sort=[("created_at", 1)])
+        if not top:
+            return {"tree": None, "company_root": None, "days": [], "members": 0}
+        start = (root or top["member"]).lower()
+        if not await db.matrix.find_one({"_id": f"GM:{start}"}):
+            raise HTTPException(404, "This wallet is not in the Global Momentum tree")
+        data = await d.matrix_tree("GM", start, start, 4)
+        ist = timedelta(hours=5, minutes=30)
+        days = {}
+        for n in await db.matrix.find({"board": "GM", "parent": {"$ne": None}}).sort("created_at", -1).to_list(100000):
+            day = (d.parse_iso(n["created_at"]) + ist).date().isoformat()
+            days.setdefault(day, []).append({"address": n["member"], "parent": n["parent"], "joined_at": n["created_at"]})
+        return {**data, "company_root": top["member"], "members": await db.matrix.count_documents({"board": "GM", "parent": {"$ne": None}}),
+                "days": [{"date": k, "count": len(v), "joins": v} for k, v in days.items()]}
+
     # ------------------------- entry / unity ports -------------------------
     @r.get("/ports/{port}")
     async def ports_report(port: str, au: dict = Depends(require("deposits")), status: Optional[str] = None, q: Optional[str] = None):

@@ -30,6 +30,7 @@ import PortsReport from "./pages/PortsReport";
 import IncomeRules from "./pages/IncomeRules";
 import PortIncomeRules from "./pages/PortIncomeRules";
 import WalletsContracts from "./pages/WalletsContracts";
+import GmTree from "./pages/GmTree";
 import IncomeReports from "./pages/IncomeReports";
 
 function Shell() {
@@ -69,6 +70,7 @@ function Shell() {
         <Route path="income-rules" element={<IncomeRules />} />
         <Route path="port-income-rules" element={<PortIncomeRules />} />
         <Route path="wallets" element={<WalletsContracts />} />
+        <Route path="gm-tree" element={<GmTree />} />
         <Route path="income-reports" element={<IncomeReports />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>

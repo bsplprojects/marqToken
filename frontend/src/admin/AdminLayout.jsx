@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Network, Trophy,
   ArrowUpFromLine, Boxes,
   FileBarChart, Bell, Headphones, UserCog,
-  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, Ticket, DoorOpen, Percent, BarChart3, Wallet,
+  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, Ticket, DoorOpen, Percent, BarChart3, Wallet, Globe2,
 } from "lucide-react";
 
 const NAV = [
@@ -19,6 +19,7 @@ const NAV = [
   ]},
   { group: "MLM Network", items: [
     { to: "network", label: "Network Trees", icon: Network, mod: "mlm" },
+    { to: "gm-tree", label: "Global Momentum Tree", icon: Globe2, mod: "mlm" },
     { to: "leaderboard", label: "Leaderboard", icon: Trophy, mod: "mlm" },
   ]},
   { group: "Finance", items: [
