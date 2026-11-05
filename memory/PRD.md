@@ -129,3 +129,4 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - One-time correction applied on Atlas (tests/correction_po_mb1.py; backup in db.corrections_backup _id po_mb1_2026_11): 9 PO $60 tx -> $50 (-$10 each), 9 MB1 L1 $50 tx deleted (-$50 each), mb_state MB1 net reduced. Total $540 taken back from 7 members
 - Port daily earnings now credited once per day at 1 AM IST (cron "0 1 * * *" Asia/Kolkata; port_income.payout_days counts 1AM-IST boundaries)
 - GM entry celebration banner (celebrations kind gm_entry); banners created for 0x12627aab and 0xeaf52b04
+- GM reset (tests/correction_gm_reset.py, backup corrections_backup gm_reset_2026_11): 4 x $1 GM tx deleted, $2 taken back from 0x12627aab and 0xeaf52b04, GM tree cleared and rebuilt with qualified members only (no payouts)
