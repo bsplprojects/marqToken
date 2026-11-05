@@ -43,7 +43,7 @@ export const PortHistory = ({ rows, onChange }) => (
             <span className="font-mono-merq text-xs text-slate-400">{fmt(p.merq_amount, 4)} MERQ</span>
             <span className={`rounded-full border px-2 py-0.5 font-mono-merq text-[10px] uppercase tracking-widest ${TONE[p.status] || "text-rose-400 border-rose-400/30"}`}>{p.status}</span>
             {p.daily_pct != null && <span className="font-mono-merq text-[11px] text-emerald-300">{fmt(p.daily_pct)}%/day · earned ${fmt(p.earned_usd)}</span>}
-            {p.next_payout_at && <span data-testid={`port-next-payout-${p.id}`} className="font-mono-merq text-[11px] text-slate-400">next payout {new Date(p.next_payout_at).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>}
+            {p.next_payout_at && <span data-testid={`port-next-payout-${p.id}`} className="font-mono-merq text-[11px] text-slate-400">next payout {new Date(p.next_payout_at).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })} IST</span>}
             <Principal p={p} onChange={onChange} />
             <span className="ml-auto font-mono-merq text-[11px] text-slate-500">{new Date(p.created_at).toLocaleString()}</span>
             <a href={p.bscscan_url} target="_blank" rel="noreferrer" className="text-amber-400"><ExternalLink className="h-4 w-4" /></a>

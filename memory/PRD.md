@@ -130,3 +130,7 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - Port daily earnings now credited once per day at 1 AM IST (cron "0 1 * * *" Asia/Kolkata; port_income.payout_days counts 1AM-IST boundaries)
 - GM entry celebration banner (celebrations kind gm_entry); banners created for 0x12627aab and 0xeaf52b04
 - GM reset (tests/correction_gm_reset.py, backup corrections_backup gm_reset_2026_11): 4 x $1 GM tx deleted, $2 taken back from 0x12627aab and 0xeaf52b04, GM tree cleared and rebuilt with qualified members only (no payouts)
+
+## Update — Port payout catch-up & GM tree viewer
+- Port payouts: catch-up safety net port_maybe_accrue() (max once/15 min) on /api/ports/status and /api/member/dashboard; only pays 1AM-IST days already due. Port history shows next_payout_at (IST)
+- Admin "Global Momentum Tree" page (/admin/gm-tree, GET /api/admin/gm-tree?root=): whole company tree, search/focus wallet, joins per IST day

@@ -984,7 +984,7 @@ def build_admin_router(d):
         data = await d.matrix_tree("GM", start, start, 4)
         ist = timedelta(hours=5, minutes=30)
         days = {}
-        for n in await db.matrix.find({"board": "GM", "parent": {"$ne": None}}).sort("created_at", -1).to_list(100000):
+        for n in await db.matrix.find({"board": "GM", "parent": {"$ne": None}}, {"member": 1, "parent": 1, "created_at": 1}).sort("created_at", -1).to_list(100000):
             day = (d.parse_iso(n["created_at"]) + ist).date().isoformat()
             days.setdefault(day, []).append({"address": n["member"], "parent": n["parent"], "joined_at": n["created_at"]})
         return {**data, "company_root": top["member"], "members": await db.matrix.count_documents({"board": "GM", "parent": {"$ne": None}}),

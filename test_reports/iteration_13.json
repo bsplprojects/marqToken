@@ -1,0 +1,45 @@
+{
+  "summary": "Iteration 13: Unity Port catch-up accrual (maybe_accrue) and the new admin Global Momentum Tree page. Local DB sim: 12/12 pytest passed. Atlas read-only checks: 21/21 passed (the 2 'FAIL' lines in the raw output came from a case-sensitive assertion in my script on checksum addresses; the data was correct). UI: admin /admin/gm-tree and member /ports/unity work. At test time (18:39-18:44Z) it was BEFORE the first due payout at 2026-11-05T19:30Z, so I could NOT confirm the 0.5004/0.5004/1.0 port_daily_earnings records on Atlas. I only confirmed that nothing was paid early.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/admin/gm-tree", "issue": "Slow on Atlas: 2.3-3.3s per call. It loads every GM matrix node on each request to build the day list, and the day list is always the whole tree, not filtered when ?root= is set. Fine at 2 members, but cost grows linearly. Consider aggregating by IST day in Mongo and/or paginating."},
+      {"endpoint": "port_income.maybe_accrue", "issue": "The throttle timestamp is set before accrue runs. If accrue fails (e.g. a price fetch error), the next retry is 15 min later; the error is logged via _done. It is also per-process: the guard is in memory only, so N workers run up to N accrues per 15 min. This is safe because of the optimistic lock on accrued_days, which I verified with concurrent gather."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "GmTree BoardTree root", "issue": "GmTree passes isSelf to BoardTree, so in the admin view the company-root spot is labelled 'YOU', and so is any focused wallet. The admin is not that wallet, so this is misleading. Pass isSelf={false} or show a 'ROOT'/short-address label.", "selector": "[data-testid=tree-spot]", "priority": "MEDIUM"},
+      {"component": "GmTree loading/error state", "issue": "No loading indicator. During the ~3s fetch, KCards show 0/0/'—' and the panels say 'The Global Momentum tree is empty.' / 'No one has joined...'. This looks like real empty data. For an unknown wallet, react-query's default retries (3x on 404) mean gm-error only appears after several seconds, and the KCards drop to 0 meanwhile. Use isLoading + placeholderData/keepPreviousData, and set retry:false for 404.", "selector": "[data-testid=gm-tree-panel]", "priority": "MEDIUM"},
+      {"component": "GmTree DayList", "issue": "useState(days[0]?.date) is set on the first render, when days is still []. Because of that, the newest day is never auto-expanded; the user must click it.", "selector": "[data-testid^=gm-day-]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin GM tree day list", "issues": ["Days are grouped by IST date ('Nov 6, 2026'), but join timestamps use the browser's local time ('Nov 05, 06:31 PM' on a UTC browser). Show the time in IST to match the grouping."]},
+      {"screen": "Member Unity port history", "issues": ["'next payout' uses browser-local time without a timezone label. Consider appending IST, or showing '01:00 IST'."]}
+    ]
+  },
+  "verified": {
+    "local_sim": "Unity $200 bought at 22:40 IST, 2026-11-05. daily_pct=0.5. next_payout=2026-11-05T19:30Z. accrue at 00:59 IST pays 0. maybe_accrue at 01:00:05 IST pays exactly 1 port_daily_earnings of $1.00, sponsor S (self-invest 100) gets port_level_income 0.25 (25%), and root, with no self-invest, gets a level_skipped event. A second maybe_accrue within 15 min is throttled (no task). 3 concurrent accrue() calls pay nothing extra (accrued_days=1, earned=1.0), and next_payout becomes 2026-11-06T19:30Z. Jumping to 2026-11-09 01:30 IST, a single run pays the 3 missed days as one tx (amount 3.0, meta.days=3), and a repeat run pays nothing. Totals: accrued_days=4, earned=4.0, available=4.0. payout_days edges: 19:29:59Z gives 0, 19:30Z gives 1.",
+    "atlas": "Temp member GET /api/ports/status -> 200 with empty history. It triggered a background accrue: port_last_accrual went from 18:39:38 to 18:39:49Z, with no new credits (correct, nothing due yet). /api/member/dashboard -> 200. DB and admin /api/admin/ports/unity rows: UP-EA9D9A85 and UP-D14B3689 ($100.08, 0.5%, accrued 0) have next_payout_at 2026-11-05T19:30:00+00:00. UP-125CB391 ($200, accrued 2, earned 2.0, one tx of 2.0 with days=2) also has next 19:30Z. gm-tree: company_root 0xc1aca21a, children 0x12627aab and 0xeaf52b04, members=2, days=[2026-11-06 IST: 2 joins]. ?root=0x12627aab returns the subtree rooted at it (also works with mixed case). Unknown root -> 404 'This wallet is not in the Global Momentum tree'. No auth -> 403.",
+    "ui": "Admin /admin/gm-tree: sidebar item is active. gm-total=2, gm-today=2, gm-root=0xc1aca2…63ad. BoardTree shows 2/2 at level 1. Clicking a day expands the joins, and clicking a join focuses that wallet ('Tree below 0x12627a…'). Search with gm-search-btn and with Enter both work. An unknown wallet shows gm-error. gm-top-btn returns to the whole tree and hides itself. Member /ports/unity: renders, shows the empty history for the temp member, and has no console errors. With the history response intercepted client-side to show the 3 real Atlas rows (read-only), port-next-payout-<id> renders 'next payout Nov 5, 07:30 PM' (browser in UTC; this is 01:00 IST)."
+  },
+  "test_report_links": ["/app/backend/tests/test_port_catchup_sim.py", "/app/backend/tests/atlas_iter13.py", "/app/test_reports/pytest/iter13_sim.xml"],
+  "action_items": [
+    "After 2026-11-05T19:30Z, re-run `python tests/atlas_iter13.py setup && check && cleanup` (it calls /ports/status and waits 10s). Expect port_daily_earnings 0.5004 for UP-EA9D9A85 and UP-D14B3689, and 1.0 for UP-125CB391 (accrued_days 3).",
+    "GmTree: don't pass isSelf, because the root is labelled 'YOU' for admins",
+    "GmTree: add a loading state and keepPreviousData; set retry:false on 404 so the error shows immediately",
+    "GmTree DayList: open the first day once data arrives (e.g. useEffect on days[0]?.date)",
+    "Optional: show IST for join times and next-payout times; make gm-tree cheaper (aggregate the day list)"
+  ],
+  "critical_code_review_comments": [
+    "maybe_accrue runs a full accrue over every active purchase every 15 min for any member hit. Fine at the current scale, and it is idempotent via the optimistic lock on accrued_days. accrue still awaits credit() after claiming the days, so a crash between the claim and credit() would lose that payout (not retried).",
+    "gm_tree day list ignores ?root and scans all GM nodes on every call"
+  ],
+  "updated_files": ["/app/backend/tests/test_port_catchup_sim.py", "/app/backend/tests/atlas_iter13.py"],
+  "success_rate": {"backend": "100%", "frontend": "90% (functional 100%; GM tree UX issues)"},
+  "seed_data_creation": "Atlas: temp member 0xa3cd29a1... (signup ref 0x625A...) was also made a temporary SUPER_ADMIN (admin_users doc + admin_addresses). All of it was deleted. The signup counter increments were reverted (0x625a2351 direct/team/right_count -1, 0x0845d7be left_count -1). The only production write left is the triggered accrue setting port_last_accrual=2026-11-05T18:39:49Z, with no credits. Local DB merqon_port_catchup_test was dropped.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Atlas URL is in /proc/230/environ (uvicorn reloader) as EXTERNAL_MONGO_URL. tests/atlas_iter13.py setup|check|cleanup gives a temp member that is also an admin, with a targeted cleanup. Run the local sim with `pytest tests/test_port_catchup_sim.py -n 0`. Atlas gm-tree calls take ~3s, so UI waits must be longer than 5s."
+}
