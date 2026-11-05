@@ -1,0 +1,37 @@
+{
+  "summary": "Retest of the iteration_10 HIGH mb_receive lost-update race: FIXED. process_techpass_income is now process_techpass_serial, which runs under a global asyncio.Lock, and backfill uses it too. mb1_race_sim.py gave 0/12 bad trials on two runs (iteration_10 had 12/12), so mb_state net+saved now equals the MB1 money credited. All other sims pass: gm_v2_race_sim 0/15, gm_v2_sim FAILS=[], gm_concurrency_sim RESULT PASS, gm_global_sim single GM root with correct BFS. New placement_claim_cleanup_sim.py (local DB, dropped after). Case 1: _place raises because the member doc is missing. The claim was deleted and the retry placed the member: PASS. Case 2: matrix.insert_one is forced to fail after the slot $push. The claim was deleted and the retry placed the member, but the parent still lists the failed child, which leaves a dangling child entry. After the retry, A appears in both MB1:0xroot.children and MB1:X.children (minor; it only happens when placement fails). Backend starts cleanly; the only CancelledError in the log is a hot-reload artifact. Atlas: GET /api/admin/income-rules returned 200 with a temp admin (po_usd=50, gm_levels=20, gm_min_directs=2) and 403 with no auth. The temp admin and its member doc were removed. Atlas matrix, transactions, techpass, members and placement_claims counts were unchanged (13/57/10/17/0).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "income_engine._place failure path", "issue": "The claim cleanup does not undo the $push into the parent's children. If the failure happens after the slot claim (matrix.insert_one of the new node failed), the parent keeps a phantom child. On retry, the member is placed elsewhere and ends up listed as a child of 2 nodes, and the parent slot is wasted. Fix: in the except block, also run db.matrix.update_one({'_id': f'{board}:{parent}'}, {'$pull': {'children': addr}}) when the push succeeded but the node insert did not. Alternatively, insert the node before the push, or pull on failure. Repro: tests/placement_claim_cleanup_sim.py case2."},
+      {"endpoint": "income_engine.process_techpass", "issue": "income_processed=True is set before payouts. If anything raises midway (DB error, placement error), the TP is marked processed while income is only partly paid and never retried. The new claim cleanup only helps after a manual reset of income_processed. Consider setting the flag at the end, or adding a 'processing' state with recovery in backfill."},
+      {"endpoint": "process_techpass_serial lock", "issue": "The asyncio.Lock is per process. It is correct for the current single uvicorn worker (--workers 1), but it breaks if the app is scaled to multiple workers or pods. Document this or move to an atomic $inc / optimistic-version update in mb_receive."},
+      {"endpoint": "POST /api/techpass/confirm (carried from iteration_10)", "issue": "The owned() / tx_hash checks are not atomic with insert. A unique index on techpass.tx_hash is still recommended."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/mb1_race_sim.py",
+    "/app/backend/tests/gm_v2_race_sim.py",
+    "/app/backend/tests/gm_v2_sim.py",
+    "/app/backend/tests/gm_concurrency_sim.py",
+    "/app/backend/tests/gm_global_sim.py",
+    "/app/backend/tests/placement_claim_cleanup_sim.py",
+    "/app/backend/tests/atlas_income_rules_check.py"
+  ],
+  "action_items": [
+    "Minor: in place() except-path, $pull addr from the parent's children if the slot $push succeeded but the node insert failed. Rerun tests/placement_claim_cleanup_sim.py; case2 must PASS.",
+    "Optional: make process_techpass failure-safe (don't mark income_processed before payouts complete).",
+    "Optional: keep --workers 1 or replace the process-local lock with atomic DB updates."
+  ],
+  "critical_code_review_comments": [
+    "The global lock serializes all TechPass income processing, including PO and GM. That is fine for the current volume, but throughput is one TP at a time.",
+    "The theoretical BFS node=None TypeError from iteration_10 is now effectively prevented in-process by the lock, though _place still has no `if not node: continue` guard."
+  ],
+  "updated_files": ["/app/backend/tests/placement_claim_cleanup_sim.py"],
+  "success_rate": {"backend": "95% (all sims pass; 1 minor failure-path check fails)", "frontend": "N/A"},
+  "seed_data_creation": "None on Atlas apart from the temp admin, which was removed. Local DBs merqon_mb1_race and merqon_claim_cleanup were created and dropped.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run the sims with `cd /app/backend/tests && python <sim>.py` (local mongodb only). placement_claim_cleanup_sim.py case2 currently FAILS because of the dangling child in the parent after a forced node-insert failure. Atlas check: atlas_income_rules_check.py (read-only plus temp admin cleanup). Atlas is PRODUCTION; never write TechPass, matrix or income data there."
+}

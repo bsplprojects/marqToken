@@ -116,3 +116,11 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - All incomes credited in USDT (members.available, income.{key}, transactions.amount = USD; meta.currency USDT). Port principal return also USDT
 - Withdraw: member enters USDT; 5% fee (withdraw_fee_pct) in USDT; net converted to MERQ at live rate locked at request (withdrawals.merq_price, net=MERQ, fee_merq). Payout sends net MERQ to member + fee_merq MERQ to Swap Fee Receive Wallet (fee_tx_hash). Limits/min/auto-approve read as USDT. protocol fee no longer applied
 - Member swap reverted to USDT <-> MERQ (PancakeSwap V2)
+
+## Update — TechPass rule fixes
+- Partner Onboarding = fixed $ (income_rules.partner_onboarding_usd, default 50) to the direct sponsor, always (spillover too). MB placement parents get only MB level amounts (prod MB1 L1 = 0)
+- Global Momentum = one company tree; member enters only when they have a confirmed TechPass AND >= gm_min_directs (2) active directs; each entry pays $gm_amount_per_level to up to gm_levels (20) GM uplines. One-time rebuild done (settings.gm_v2_rebuilt)
+- Placement claims (db.placement_claims) + serialized TechPass processing (asyncio.Lock) prevent double placement/payout races
+- Admin Income Rules: Recent TechPass Income panel removed
+- Note: past 9 Partner Onboarding payouts were $60 (pre-fix) and 4 x $1 GM v1 payouts — not reversed
+- Secrets (EXTERNAL_MONGO_URL, TREASURY_PRIVATE_KEY) are injected into process env, not present in backend/.env

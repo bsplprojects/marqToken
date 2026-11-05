@@ -54,6 +54,7 @@ def build_income_engine(d):
         try:
             return await _place(board, addr, pid)
         except Exception:
+            await db.matrix.update_many({"board": board, "children": addr}, {"$pull": {"children": addr}})
             await db.placement_claims.delete_one({"_id": pid})
             raise
 
@@ -175,7 +176,7 @@ def build_income_engine(d):
         r = await rules()
         swap, settings = await d.get_swap_config(), await d.get_settings()
         price, _, _ = await d.live_price(swap, settings)
-        addr, usd = tp["address"], float(tp["price_usd"])
+        addr = tp["address"]
         m = await db.members.find_one({"_id": addr})
         sp = m.get("sponsor")
         if sp:
