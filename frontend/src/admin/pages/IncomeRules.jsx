@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { adminApi } from "../adminApi";
 import { useAdminAuth } from "../AdminAuth";
-import { useAdminData, AHeader, Panel, Btn, Table, KCard, Empty, fmt, dt } from "../ui";
+import { useAdminData, AHeader, Panel, Btn, Table, KCard, fmt } from "../ui";
 import { toast } from "sonner";
 import { Save, RotateCcw } from "lucide-react";
 
@@ -47,18 +47,19 @@ export default function IncomeRules() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
         {Object.entries(data.totals).map(([k, v]) => <KCard key={k} testid={`income-total-${k}`} label={LABEL[k]} value={`$${fmt(v.usd)}`} accent="amber" />)}
         <KCard testid="income-lp-treasury" label="To LP & Treasury" value={`$${fmt(data.lp_treasury_usd)}`} accent="cyan" />
-        <KCard testid="income-gm-skipped" label="GM skipped (unqualified)" value={`$${fmt(data.gm_skipped.usd)}`} accent="rose" />
+        <KCard testid="income-gm-members" label="Global Momentum members" value={data.gm_members} accent="rose" />
       </div>
       <div className="grid lg:grid-cols-2 gap-5 mb-5">
         <Panel title="Partner Onboarding" className="p-5">
-          <Field testid="rule-po-pct" label="% of TechPass price to direct sponsor" value={f.partner_onboarding_pct} disabled={!canEdit} onChange={(v) => setF({ ...f, partner_onboarding_pct: v })} />
+          <Field testid="rule-po-usd" label="$ per TechPass to the direct sponsor (always the sponsor, even for spillover)" value={f.partner_onboarding_usd} disabled={!canEdit} onChange={(v) => setF({ ...f, partner_onboarding_usd: v })} />
         </Panel>
-        <Panel title="Global Momentum" className="p-5">
+        <Panel title="Global Momentum (one company-wide tree)" className="p-5">
           <div className="grid grid-cols-3 gap-3">
-            <Field testid="rule-gm-levels" label="Levels" value={f.gm_levels} disabled={!canEdit} onChange={(v) => setF({ ...f, gm_levels: v })} />
-            <Field testid="rule-gm-amount" label="$ per participant" value={f.gm_amount_per_level} disabled={!canEdit} onChange={(v) => setF({ ...f, gm_amount_per_level: v })} />
-            <Field testid="rule-gm-directs" label="Min direct TechPass" value={f.gm_min_directs} disabled={!canEdit} onChange={(v) => setF({ ...f, gm_min_directs: v })} />
+            <Field testid="rule-gm-levels" label="Levels paid upward" value={f.gm_levels} disabled={!canEdit} onChange={(v) => setF({ ...f, gm_levels: v })} />
+            <Field testid="rule-gm-amount" label="$ per level" value={f.gm_amount_per_level} disabled={!canEdit} onChange={(v) => setF({ ...f, gm_amount_per_level: v })} />
+            <Field testid="rule-gm-directs" label="Active directs to enter" value={f.gm_min_directs} disabled={!canEdit} onChange={(v) => setF({ ...f, gm_min_directs: v })} />
           </div>
+          <p className="text-xs text-slate-500 mt-3">An active member enters the tree once they have this many active directs, filled level by level. Each entry pays the set $ to every upline up to the set levels.</p>
         </Panel>
       </div>
       <Panel title="Momentum Booster Boards (2-wide, 5 levels, built from each sponsor's team)" className="mb-5">
@@ -76,22 +77,6 @@ export default function IncomeRules() {
           ))}
         </Table>
         <p className="px-5 py-3 text-xs text-slate-500">Each new entrant pays L1–L5 to their 5 uplines in that board. A member is paid until their net profit is reached, then saves for the next board and enters it automatically; whatever is left of the savings after the next board's level payouts goes to LP & Treasury.</p>
-      </Panel>
-      <Panel title="Recent TechPass Income">
-        {data.recent.length ? (
-          <Table columns={[{ label: "Wallet" }, { label: "Income" }, { label: "USD", right: true }, { label: "MERQ", right: true }, { label: "Detail" }, { label: "Date" }]}>
-            {data.recent.map((t) => (
-              <tr key={t.id} className="border-b border-white/5 hover:bg-white/5">
-                <td className="px-5 py-2.5 font-mono-merq text-xs text-slate-400">{t.address.slice(0, 8)}…{t.address.slice(-4)}</td>
-                <td className="px-5 py-2.5 text-slate-200">{LABEL[t.type]}</td>
-                <td className="px-5 py-2.5 text-right font-mono-merq text-slate-200">${fmt(t.usd ?? 0)}</td>
-                <td className="px-5 py-2.5 text-right font-mono-merq text-amber-300">{fmt(t.merq, 4)}</td>
-                <td className="px-5 py-2.5 text-xs text-slate-500">{t.board || (t.level ? `Level ${t.level}` : "—")}</td>
-                <td className="px-5 py-2.5 text-xs text-slate-500">{dt(t.created_at)}</td>
-              </tr>
-            ))}
-          </Table>
-        ) : <Empty text="No TechPass income yet." />}
       </Panel>
     </div>
   );

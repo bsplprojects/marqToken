@@ -792,20 +792,17 @@ def build_admin_router(d):
                                                        {"$group": {"_id": None, "n": {"$sum": 1}, "usd": {"$sum": "$usd"}}}]).to_list(1)
         lp = await db.income_events.aggregate([{"$match": {"kind": "mb_entry"}},
                                                {"$group": {"_id": None, "lp": {"$sum": "$lp_treasury"}, "un": {"$sum": "$unassigned"}}}]).to_list(1)
-        recent = await db.transactions.find({"type": {"$in": list(totals)}}).sort("created_at", -1).to_list(50)
         return {"rules": rules, "defaults": d.INCOME_DEFAULTS, "totals": totals, "board_members": boards,
                 "gm_skipped": {"count": gm_skipped[0]["n"] if gm_skipped else 0, "usd": gm_skipped[0]["usd"] if gm_skipped else 0},
                 "lp_treasury_usd": round(lp[0]["lp"], 2) if lp else 0, "unassigned_usd": round(lp[0]["un"], 2) if lp else 0,
-                "recent": [{"id": t["_id"], "address": t["address"], "type": t["type"], "merq": t["amount"],
-                            "usd": (t.get("meta") or {}).get("usd"), "board": (t.get("meta") or {}).get("board"),
-                            "level": (t.get("meta") or {}).get("level"), "created_at": t["created_at"]} for t in recent]}
+                "gm_members": await db.matrix.count_documents({"board": "GM"})}
 
     @r.put("/income-rules")
     async def income_rules_put(payload: dict, request: Request, au: dict = Depends(require("settings", write=True))):
         cur = await d.income_rules()
         try:
             new = {
-                "partner_onboarding_pct": float(payload.get("partner_onboarding_pct", cur["partner_onboarding_pct"])),
+                "partner_onboarding_usd": float(payload.get("partner_onboarding_usd", cur["partner_onboarding_usd"])),
                 "gm_levels": int(payload.get("gm_levels", cur["gm_levels"])),
                 "gm_amount_per_level": float(payload.get("gm_amount_per_level", cur["gm_amount_per_level"])),
                 "gm_min_directs": int(payload.get("gm_min_directs", cur["gm_min_directs"])),
@@ -814,15 +811,15 @@ def build_admin_router(d):
             }
         except (TypeError, ValueError, KeyError):
             raise HTTPException(400, "All amounts must be numbers")
-        if not 0 <= new["partner_onboarding_pct"] <= 100:
-            raise HTTPException(400, "Partner Onboarding % must be between 0 and 100")
+        if new["partner_onboarding_usd"] < 0:
+            raise HTTPException(400, "Partner Onboarding amount can't be negative")
         if not 1 <= new["gm_levels"] <= 30 or new["gm_amount_per_level"] < 0 or new["gm_min_directs"] < 0:
             raise HTTPException(400, "Global Momentum: levels 1-30, amounts not negative")
         if len(new["mb_boards"]) != 8 or any(len(b["levels"]) != 5 or min(b["levels"] + [b["net_profit"], b["upgrade_save"]]) < 0
                                              for b in new["mb_boards"]):
             raise HTTPException(400, "Each of the 8 MB boards needs 5 level amounts, none negative")
         await db.settings.update_one({"_id": "global"}, {"$set": {"income_rules": new}})
-        await audit(au, "update_income_rules", "settings", None, {"partner_onboarding_pct": new["partner_onboarding_pct"]}, request)
+        await audit(au, "update_income_rules", "settings", None, {"partner_onboarding_usd": new["partner_onboarding_usd"]}, request)
         return {"ok": True, "rules": new}
 
     # ------------------------- port income rules -------------------------

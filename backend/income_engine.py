@@ -9,7 +9,7 @@ def _mb(levels, net, save):
 
 
 INCOME_DEFAULTS = {
-    "partner_onboarding_pct": 50.0,
+    "partner_onboarding_usd": 50.0,
     "gm_levels": 20, "gm_amount_per_level": 1.0, "gm_min_directs": 2,
     "mb_boards": [
         _mb([50, 10, 10, 10, 10], 400, 300),
@@ -29,7 +29,11 @@ def build_income_engine(d):
 
     async def rules():
         s = await d.get_settings()
-        return {**INCOME_DEFAULTS, **(s.get("income_rules") or {})}
+        saved = dict(s.get("income_rules") or {})
+        if "partner_onboarding_usd" not in saved and "partner_onboarding_pct" in saved:
+            saved["partner_onboarding_usd"] = saved["partner_onboarding_pct"]  # old field was entered as $ by the admin
+        saved.pop("partner_onboarding_pct", None)
+        return {**INCOME_DEFAULTS, **saved}
 
     async def owner_root():
         owners = [a.strip().lower() for a in os.environ.get("OWNER_ADMIN_WALLETS", "").split(",") if a.strip()]
@@ -160,18 +164,52 @@ def build_income_engine(d):
         m = await db.members.find_one({"_id": addr})
         sp = m.get("sponsor")
         if sp:
-            await credit(sp, "tp_partner_onboarding", round(usd * r["partner_onboarding_pct"] / 100, 4), {"from": addr}, price)
+            await credit(sp, "tp_partner_onboarding", float(r["partner_onboarding_usd"]), {"from": addr}, price)
         await mb_enter(addr, 0, r, price)
-        await place("GM", addr)
-        gm_ups = await ancestors("GM", addr, int(r["gm_levels"]))
-        for lvl, up in enumerate(gm_ups, start=1):
-            directs = await db.members.find({"sponsor": up}, {"_id": 1}).to_list(10000)
-            n = await db.techpass.count_documents({"address": {"$in": [x["_id"] for x in directs]}, "status": "confirmed"})
-            if n >= int(r["gm_min_directs"]):
-                await credit(up, "tp_global_momentum", float(r["gm_amount_per_level"]), {"from": addr, "level": lvl}, price)
-            else:
-                await log("gm_skipped", member=up, level=lvl, source=addr, usd=float(r["gm_amount_per_level"]))
+        await gm_check(addr, r, price)
+        if sp:
+            await gm_check(sp, r, price)
         await log("techpass_processed", member=addr, techpass=tp["_id"])
+
+    async def active_directs(addr):
+        directs = [x["_id"] for x in await db.members.find({"sponsor": addr}, {"_id": 1}).to_list(10000)]
+        return await db.techpass.distinct("address", {"address": {"$in": directs}, "status": "confirmed"}) if directs else []
+
+    async def gm_check(addr, r, price, pay=True):
+        """Enter the company-wide Global Momentum tree once a member is active with enough active directs."""
+        if await db.matrix.find_one({"_id": f"GM:{addr}"}):
+            return
+        if not await db.techpass.find_one({"address": addr, "status": "confirmed"}):
+            return
+        if len(await active_directs(addr)) < int(r["gm_min_directs"]):
+            return
+        await place("GM", addr)
+        if not pay:
+            return
+        ups = await ancestors("GM", addr, int(r["gm_levels"]))
+        for lvl, up in enumerate(ups, start=1):
+            await credit(up, "tp_global_momentum", float(r["gm_amount_per_level"]), {"from": addr, "level": lvl}, price)
+        await log("gm_entry", member=addr, paid_levels=len(ups), usd=len(ups) * float(r["gm_amount_per_level"]))
+
+    async def gm_rebuild():
+        """One-time: rebuild GM with only qualified members, in the order they qualified (no new payouts)."""
+        s = await d.get_settings()
+        if s.get("gm_v2_rebuilt"):
+            return
+        r = await rules()
+        await db.matrix.delete_many({"board": "GM"})
+        qual = []
+        for addr in await db.techpass.distinct("address", {"status": "confirmed"}):
+            act = await active_directs(addr)
+            if len(act) < int(r["gm_min_directs"]):
+                continue
+            own = await db.techpass.find_one({"address": addr, "status": "confirmed"}, sort=[("created_at", 1)])
+            times = sorted([(await db.techpass.find_one({"address": a, "status": "confirmed"}, sort=[("created_at", 1)]))["created_at"] for a in act])
+            qual.append((max(own["created_at"], times[int(r["gm_min_directs"]) - 1] if times else own["created_at"]), addr))
+        for _, addr in sorted(qual):
+            await gm_check(addr, r, 0, pay=False)
+        await db.settings.update_one({"_id": "global"}, {"$set": {"gm_v2_rebuilt": d.iso(d.now_utc())}})
+        await log("gm_rebuild", members=[a for _, a in sorted(qual)])
 
     async def member_mb(addr):
         r = await rules()
@@ -215,6 +253,7 @@ def build_income_engine(d):
                 "tree": tree, "board_members": count, "depth": depth}
 
     async def backfill():
+        await gm_rebuild()
         for tp in await db.techpass.find({"status": "confirmed"}, {"address": 1}).to_list(100000):
             await db.members.update_one({"_id": tp["address"], "status": "inactive"}, {"$set": {"status": "active"}})
         for tp in await db.techpass.find({"status": "confirmed", "income_processed": {"$ne": True}}).sort("created_at", 1).to_list(100000):
