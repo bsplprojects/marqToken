@@ -3,7 +3,7 @@ import asyncio
 import hmac
 import os
 import secrets
-from datetime import timedelta
+from datetime import timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Depends, Request
 
@@ -35,6 +35,18 @@ def daily_pct(r, port, usd):
         if usd >= t["min_usd"]:
             pct = float(t["daily_pct"])
     return pct
+
+
+IST = timezone(timedelta(hours=5, minutes=30))
+
+
+def payout_days(start, now):
+    """Number of daily 1 AM IST payout times passed since start."""
+    s, n = start.astimezone(IST), now.astimezone(IST)
+    first = s.replace(hour=1, minute=0, second=0, microsecond=0)
+    if first <= s:
+        first += timedelta(days=1)
+    return 0 if n < first else int((n - first).total_seconds() // 86400) + 1
 
 
 def build_port_income(d):
@@ -139,7 +151,7 @@ def build_port_income(d):
         now, credited = d.now_utc(), 0
         for p in await db.port_purchases.find({"status": "confirmed", "income_processed": True,
                                                "principal_status": "active"}).to_list(100000):
-            days = int((now - d.parse_iso(p["accrual_start"])).total_seconds() // 86400)
+            days = payout_days(d.parse_iso(p["accrual_start"]), now)
             new = days - p.get("accrued_days", 0)
             if new <= 0:
                 continue

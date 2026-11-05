@@ -207,6 +207,8 @@ def build_income_engine(d):
         for lvl, up in enumerate(ups, start=1):
             await credit(up, "tp_global_momentum", float(r["gm_amount_per_level"]), {"from": addr, "level": lvl}, price)
         await log("gm_entry", member=addr, paid_levels=len(ups), usd=len(ups) * float(r["gm_amount_per_level"]))
+        await db.celebrations.insert_one({"_id": secrets.token_hex(12), "member": addr, "kind": "gm_entry",
+                                          "title": "Global Momentum", "seen": False, "created_at": d.iso(d.now_utc())})
 
     async def gm_rebuild():
         """One-time: rebuild GM with only qualified members, in the order they qualified (no new payouts)."""
