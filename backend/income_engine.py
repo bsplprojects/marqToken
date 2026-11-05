@@ -1,4 +1,5 @@
 """Merq TechPass income engine: Partner Onboarding, Momentum Booster (MB1-MB8), Global Momentum."""
+import asyncio
 from collections import deque
 import os
 import secrets
@@ -50,6 +51,13 @@ def build_income_engine(d):
             return False
         if await db.matrix.find_one({"_id": pid}):
             return False
+        try:
+            return await _place(board, addr, pid)
+        except Exception:
+            await db.placement_claims.delete_one({"_id": pid})
+            raise
+
+    async def _place(board: str, addr: str, pid: str):
         m = await db.members.find_one({"_id": addr})
         up, anchor = (m.get("sponsor") if board != "GM" else None), None
         seen = set()
@@ -266,11 +274,18 @@ def build_income_engine(d):
         for tp in await db.techpass.find({"status": "confirmed"}, {"address": 1}).to_list(100000):
             await db.members.update_one({"_id": tp["address"], "status": "inactive"}, {"$set": {"status": "active"}})
         for tp in await db.techpass.find({"status": "confirmed", "income_processed": {"$ne": True}}).sort("created_at", 1).to_list(100000):
-            await process_techpass(tp)
+            await process_techpass_serial(tp)
 
     d.income_rules = rules
     d.matrix_tree = matrix_tree
     d.income_backfill = backfill
-    d.process_techpass_income = process_techpass
+    lock = asyncio.Lock()
+
+    async def process_techpass_serial(tp: dict):
+        # board state (net/saved) is read-modify-write, so TechPass incomes run one at a time
+        async with lock:
+            await process_techpass(tp)
+
+    d.process_techpass_income = process_techpass_serial
     d.member_mb = member_mb
     d.INCOME_DEFAULTS = INCOME_DEFAULTS

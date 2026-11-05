@@ -1,0 +1,53 @@
+{
+  "summary": "Retested the iteration_9 HIGH GM duplicate-payout race. FIXED: gm_v2_race_sim.py was run 3 times with 0/15 bad trials each time (iteration_9 had 13/15). gm_v2_sim.py: FAILS=[] (all PASS). gm_concurrency_sim.py: RESULT PASS, with no errors, overfills, orphans or phantom nodes. gm_global_sim.py: global BFS order is correct and there is a single GM root. New MB1 race sim (tests/mb1_race_sim.py, local DB merqon_mb1_race, dropped after) ran 12 trials of 25-30 members. Each TP doc was processed twice concurrently, and in 6 trials each member also had 2 TP docs. Placement is correct: one MB1 node per member, no duplicate children, no overfill, no orphans, exactly one mb_entry per entrant, paid amounts match final tree depth, and no receiver is paid twice from the same entrant. NEW BUG FOUND, 12/12 trials: mb_receive does a read-modify-replace on mb_state, so concurrent payouts to the same upline lose updates. mb_state net+saved was about $1100 vs $2180 actually paid. Wallet credits are still correct because they use $inc. A sequential control run is consistent. The backend starts cleanly (no errors in backend.err.log). On Atlas, GET /api/admin/income-rules returned 200 via a temp admin (po_usd=50, gm_min_directs=2, gm_levels=20), and returned 403 with no auth. The temp admin and its member doc were removed. Atlas matrix, transactions, techpass and members counts were unchanged.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "income_engine.mb_receive (MB1..MB8 net/save state)",
+        "issue": "Lost-update race. mb_receive reads mb_state, computes pay/save in Python, then calls replace_one. When TechPass confirmations run concurrently (each /api/techpass/confirm and /status refresh can call process_techpass_income in parallel), two payouts to the same upline both read the old net/saved and one increment is lost. Repro: tests/mb1_race_sim.py gave 12/12 trials with mb_state net+saved about 50% below the MB money credited (e.g. 1100 vs 2180). Impact: tracked net stays below the $400 MB1 net cap, so members keep getting paid past the cap and never save the $300 upgrade amount. MB2+ auto-upgrades are delayed or never happen, and more money is paid out than the rules allow. Suggested fix: serialize per receiver, e.g. an asyncio.Lock per mb_state _id (single process), or a global asyncio.Lock around process_techpass. Or use atomic conditional updates (find_one_and_update with $inc on net/saved and guarded caps, or optimistic concurrency with a version field and retry).",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "income_engine.place()",
+        "issue": "The placement_claims doc is inserted before placement. If place() then raises (RuntimeError 'no open slot', DB error), the claim stays and that member can never be placed on the board. Delete the claim on exception (try/except, then delete_one)."
+      },
+      {
+        "endpoint": "income_engine.place() BFS",
+        "issue": "Theoretical: the child is $pushed into the parent before its own matrix node is inserted. A concurrent BFS reaching that child gets node=None and raises TypeError on node['children']. Not seen in 12 MB1 trials or the GM sims, but guard it with `if not node: continue`."
+      },
+      {
+        "endpoint": "POST /api/techpass/confirm",
+        "issue": "The owned() / tx_hash-used checks are not atomic with insert_one. Concurrent confirms by the same member (different tx hashes) could create 2 TechPasses, and each would pay PO. A unique index on techpass.tx_hash and a per-member guard are recommended."
+      }
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/gm_v2_race_sim.py",
+    "/app/backend/tests/gm_v2_sim.py",
+    "/app/backend/tests/gm_concurrency_sim.py",
+    "/app/backend/tests/gm_global_sim.py",
+    "/app/backend/tests/mb1_race_sim.py",
+    "/app/backend/tests/atlas_income_rules_check.py"
+  ],
+  "action_items": [
+    "HIGH: Make mb_receive atomic or serialized per receiver (mb_state lost updates under concurrent TechPass confirmations). Verify with python /app/backend/tests/mb1_race_sim.py, which should show 'MB1 RACE bad trials: 0/12'.",
+    "Minor: in place(), release the placement claim if placement fails after claiming.",
+    "Minor: in place() BFS, skip children whose matrix node does not exist yet.",
+    "Minor: make TechPass confirm idempotent per member/tx_hash (unique index)."
+  ],
+  "critical_code_review_comments": [
+    "The place() claim via placement_claims unique _id correctly fixes the GM/MB double-placement and double-payout. mb_enter and gm_check both stop when place returns False.",
+    "Atlas has 0 placement_claims docs; existing nodes are protected by the matrix find_one after claiming (the claim is inserted, then it returns False). This is fine.",
+    "credit() uses $inc, so wallet balances are race-safe. Only the mb_state bookkeeping is not."
+  ],
+  "updated_files": ["/app/backend/tests/mb1_race_sim.py", "/app/backend/tests/atlas_income_rules_check.py"],
+  "success_rate": {"backend": "GM race fix 100% (0/45 bad trials); MB1 placement 100%; MB1 state accounting 0/12 under concurrency", "frontend": "not tested"},
+  "seed_data_creation": "Local DBs only (merqon_gmv2_race, merqon_mb1_race, sim DBs), all dropped. Temp Atlas admin TEST_tmp_t1 was created and deleted by id; no leftovers.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run mb1_race_sim.py after the mb_receive fix (expect 0/12). gm_v2_race_sim.py should stay at 0/15. Atlas is PRODUCTION, so only use atlas_income_rules_check.py (temp admin, self-cleaning).",
+  "rca of the issue": "mb_receive: st = find_one(mb_state) -> compute -> replace_one(st). Under asyncio.gather, many entrants pay the same uplines (e.g. root, level-1 nodes) at the same time. Each coroutine awaits between the read and the write, so the last write wins and the other net/saved increments are dropped. Mitigation: a per-sid asyncio.Lock, or an atomic $inc with conditional caps."
+}
