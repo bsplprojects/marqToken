@@ -406,6 +406,7 @@ async def member_profile(m: dict = Depends(current_member)):
 
 @api.get("/member/dashboard")
 async def member_dashboard(m: dict = Depends(current_member)):
+    _admin_deps.port_maybe_accrue()
     settings = await get_settings()
     price = settings.get("merq_price_usd", 0.0)
     # add live-accruing growth to a preview number

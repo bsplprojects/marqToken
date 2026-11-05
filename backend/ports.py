@@ -46,6 +46,8 @@ def build_ports(d):
                 "bscscan_url": f"{d.BSCSCAN_BASE}{p['tx_hash']}", "daily_pct": p.get("daily_pct"),
                 "earned_usd": round(p.get("earned_usd", 0.0), 4), "lock_until": p.get("lock_until"),
                 "principal_status": p.get("principal_status"),
+                "next_payout_at": d.iso(d.port_next_payout(d.parse_iso(p["accrual_start"]), p.get("accrued_days", 0)))
+                if p.get("accrual_start") and p.get("principal_status") == "active" else None,
                 "can_withdraw_principal": p.get("principal_status") == "active" and
                 (not p.get("lock_until") or d.parse_iso(p["lock_until"]) <= d.now_utc())}
 
@@ -69,6 +71,7 @@ def build_ports(d):
 
     @r.get("/status")
     async def status(m: dict = Depends(d.current_member)):
+        d.port_maybe_accrue()
         cfg, swap, settings = await ports_config(), await d.get_swap_config(), await d.get_settings()
         price, source, dec = await d.live_price(swap, settings)
         docs = await refresh_list(await db.port_purchases.find({"address": m["_id"]}).sort("created_at", -1).to_list(500))

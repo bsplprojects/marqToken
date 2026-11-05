@@ -59,6 +59,15 @@ def payout_days(start, now):
     return 0 if n < first else int((n - first).total_seconds() // 86400) + 1
 
 
+def next_payout(start, accrued_days):
+    """When the next daily 1 AM IST payout for this purchase happens."""
+    s = start.astimezone(IST)
+    first = s.replace(hour=1, minute=0, second=0, microsecond=0)
+    if first <= s:
+        first += timedelta(days=1)
+    return (first + timedelta(days=accrued_days)).astimezone(timezone.utc)
+
+
 def build_port_income(d):
     db = d.db
 
@@ -260,6 +269,20 @@ def build_port_income(d):
     d.port_income_rules = rules
     d.process_port_income = process_purchase
     d.port_accrue = accrue
+    d.port_next_payout = next_payout
+    last = {"at": None}
+
+    def maybe_accrue():
+        """Catch-up safety net if a scheduled run was missed; only pays days already due."""
+        now = d.now_utc()
+        if last["at"] and (now - last["at"]).total_seconds() < 900:
+            return
+        last["at"] = now
+        t = asyncio.create_task(accrue())
+        _tasks.add(t)
+        t.add_done_callback(_done)
+
+    d.port_maybe_accrue = maybe_accrue
     d.port_withdraw_principal = withdraw_principal
     d.port_member_info = member_info
     d.port_income_backfill = backfill
