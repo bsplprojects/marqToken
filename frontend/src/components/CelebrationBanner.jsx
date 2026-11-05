@@ -34,7 +34,7 @@ export const CelebrationBanner = () => {
             {isRank ? <>You reached <span className="gold-text">{c.title}</span></> : isGm ? <>Welcome to <span className="gold-text">Global Momentum</span></> : <>You moved up to <span className="gold-text">{c.title}</span></>}
           </div>
           <div className="text-sm text-slate-300 mt-1">
-            {isRank ? `A one-time reward of $${fmt(c.usd)} has been added to your balance.` : isGm ? "You have 2 active directs, so you joined the company-wide Global Momentum tree. You now earn from every member placed below you." : `Your ${c.from_board} savings are complete, so you entered ${c.title} automatically. Bigger payouts start now.`}
+            {isRank ? `A one-time reward of $${fmt(c.usd)} has been added to your balance.` : isGm ? "You reached the active directs needed, so you joined the company-wide Global Momentum tree. You now earn from every member placed below you." : `Your ${c.from_board} savings are complete, so you entered ${c.title} automatically. Bigger payouts start now.`}
           </div>
         </div>
         <button data-testid="celebration-view" onClick={() => dismiss(true)} className="inline-flex items-center gap-2 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold px-5 py-2.5 transition-colors">

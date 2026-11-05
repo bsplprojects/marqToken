@@ -124,3 +124,8 @@ guaranteed-return promises). Branding: MerqON — "Build for everyone".
 - Admin Income Rules: Recent TechPass Income panel removed
 - Note: past 9 Partner Onboarding payouts were $60 (pre-fix) and 4 x $1 GM v1 payouts — not reversed
 - Secrets (EXTERNAL_MONGO_URL, TREASURY_PRIVATE_KEY) are injected into process env, not present in backend/.env
+
+## Update — Corrections, 1 AM IST port run, GM banner
+- One-time correction applied on Atlas (tests/correction_po_mb1.py; backup in db.corrections_backup _id po_mb1_2026_11): 9 PO $60 tx -> $50 (-$10 each), 9 MB1 L1 $50 tx deleted (-$50 each), mb_state MB1 net reduced. Total $540 taken back from 7 members
+- Port daily earnings now credited once per day at 1 AM IST (cron "0 1 * * *" Asia/Kolkata; port_income.payout_days counts 1AM-IST boundaries)
+- GM entry celebration banner (celebrations kind gm_entry); banners created for 0x12627aab and 0xeaf52b04

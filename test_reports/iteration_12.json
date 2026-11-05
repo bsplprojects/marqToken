@@ -1,0 +1,50 @@
+{
+  "summary": "Iteration 12: verified (1) PO $60->$50 / MB1 $50 correction on Atlas (read-only), (2) daily port accrual at 1 AM IST (payout_days unit tests, local DB sim, cron endpoint auth/dup/idempotency on public URL), (3) GM entry celebration (local gm_check sim + UI on Atlas with temp member). Everything requested passed. 9/9 pytest and 22/22 Atlas read-only checks passed, and the UI flow passed on desktop and mobile.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/cron/port-accrual", "issue": "Dedup is find_one then insert_one (not atomic). Two deliveries with the same X-Webhook-Id at the same time can both pass the find, and the second insert then fails with an uncaught DuplicateKeyError (500). Fix: insert first and catch DuplicateKeyError to return duplicate:true."},
+      {"endpoint": "POST /api/cron/port-accrual", "issue": "asyncio.create_task(accrue()) keeps no reference to the task and has no error callback. The task can be garbage-collected, and exceptions in accrue are lost without logging. Keep a reference in a module-level set and add a done-callback that logs the exception."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "CelebrationBanner gm_entry", "issues": ["Copy hardcodes 'You have 2 active directs' while gm_min_directs is admin-configurable. Build the text from the rule value or make it generic."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_port_ist_and_gm_celebration.py",
+    "/app/backend/tests/verify_po_mb1_correction.py",
+    "/app/backend/tests/atlas_port_snapshot.py",
+    "/app/backend/tests/atlas_temp_member_celebration.py",
+    "/app/test_reports/pytest/iter12.xml"
+  ],
+  "verified": {
+    "correction": "No tp_partner_onboarding tx with amount 60 remain. 9 tx now have amount 50 with meta.corrected_from=60. 0 MB1 tx with amount 50. corrections_backup po_mb1_2026_11 exists (9 po_tx, 9 mb1_tx, 7 members, 6 mb_state). settings.corrections flag and audit log corr-po_mb1_2026_11 exist. All 7 balances match exactly (50, 60, 182.6, 50, 55, 80, 249.15), and backup original minus deduction equals the current balance for each. income_usd and income for tp_partner_onboarding and tp_momentum_booster equal the per-member tx sums with 0 mismatches. No negative balances. Rerunning the script prints 'already applied' and makes no change. Current rules: partner_onboarding_usd=50 and MB1 level1=0, so no new $60 or $50 payouts will be made.",
+    "port_ist": "crons.yml uses '0 1 * * *' with Asia/Kolkata. payout_days returns 0 at 19:29Z, 1 at 19:30Z and 2 at 2026-11-06T19:30Z, plus edge cases (start exactly at the boundary, now before start, +05:30 offset input). Local sim: 0 tx before 1AM IST, then exactly 1 port_daily_earnings + 1 port_level_income per day, and repeat accrue calls in the same day credit nothing. Amounts are correct (1000*0.3%*2=6, 25% level=1.5). Public cron endpoint: no auth -> 401, wrong secret -> 401, valid -> 200 accepted, same X-Webhook-Id -> duplicate:true. On Atlas, port_last_accrual moved from 18:21:50 to 18:23:21 and no new transactions were created (idempotent; accrued_days match the IST boundary math for all active purchases).",
+    "gm_celebration": "Local sim: no celebration with 0 or 1 active directs. Exactly one {kind:gm_entry, title:'Global Momentum', seen:false} is inserted on the 2nd active direct, and no duplicate on the 3rd. UI with a temp Atlas member: the banner shows 'Welcome to Global Momentum', View goes to /income/techpass-global-momentum and marks the celebration seen, the dismiss X marks it seen and hides the banner, and the banner stays hidden after reload. No console errors. Mobile layout is fine."
+  },
+  "action_items": [
+    "Optional: make the cron dedup atomic (insert + catch DuplicateKeyError)",
+    "Optional: keep a reference to the background accrue task and log its exceptions",
+    "Optional: build the gm_entry banner text from gm_min_directs"
+  ],
+  "critical_code_review_comments": [
+    "port_income.cron_accrual: dedup is not atomic, and the background task is created without keeping a reference or logging errors (see minor issues)",
+    "Switching to 1AM IST boundaries can pay old purchases at most one extra day once, compared with a strict 24h count. It never double-pays (optimistic lock on accrued_days)",
+    "Correction script can push available below 0 if a member had already withdrawn. Not the case now (0 negatives)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_port_ist_and_gm_celebration.py",
+    "/app/backend/tests/verify_po_mb1_correction.py",
+    "/app/backend/tests/atlas_port_snapshot.py",
+    "/app/backend/tests/atlas_temp_member_celebration.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Atlas: temp member 0x80433567... (signup ref 0x625A...) plus 3 TEST_ gm_entry celebrations were created, then all deleted. The signup's counter increments (0x625a2351 direct/team/right_count, 0x0845d7be left_count) were reverted. The TEST_ cron_runs doc was deleted by id. The real banners for 0x12627aab and 0xeaf52b04 remain unseen. The cron call wrote one change to production: port_last_accrual moved to 18:23:21Z (no credits). Local DBs merqon_port_ist_test and merqon_gm_celeb_test were dropped.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use EXTERNAL_MONGO_URL from /proc/<uvicorn pid>/environ for Atlas scripts. tests/atlas_temp_member_celebration.py setup/cleanup gives a temp member JWT and reverts it afterwards. Run pytest with -n 0 for test_port_ist_and_gm_celebration.py."
+}

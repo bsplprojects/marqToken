@@ -1,11 +1,13 @@
 """Entry/Unity Port incomes: daily earnings, Partner Onboarding (Unity), Level Income, Rank Rewards."""
 import asyncio
 import hmac
+import logging
 import os
 import secrets
 from datetime import timedelta, timezone
 
 from fastapi import APIRouter, HTTPException, Depends, Request
+from pymongo.errors import DuplicateKeyError
 
 PORT_INCOME_DEFAULTS = {
     "entry_daily_pct": 0.30,
@@ -38,6 +40,14 @@ def daily_pct(r, port, usd):
 
 
 IST = timezone(timedelta(hours=5, minutes=30))
+_tasks = set()
+log = logging.getLogger("merqon")
+
+
+def _done(t):
+    _tasks.discard(t)
+    if not t.cancelled() and t.exception():
+        log.error(f"Port accrual failed: {t.exception()}")
 
 
 def payout_days(start, now):
@@ -219,10 +229,13 @@ def build_port_income(d):
         if not secret or not auth.startswith("Bearer ") or not hmac.compare_digest(auth[7:], secret):
             raise HTTPException(401, "Unauthorized")
         run_id = request.headers.get("x-webhook-id") or secrets.token_hex(8)
-        if await db.cron_runs.find_one({"_id": run_id}):
+        try:
+            await db.cron_runs.insert_one({"_id": run_id, "job": "port-accrual", "created_at": d.iso(d.now_utc())})
+        except DuplicateKeyError:
             return {"ok": True, "duplicate": True}
-        await db.cron_runs.insert_one({"_id": run_id, "job": "port-accrual", "created_at": d.iso(d.now_utc())})
-        asyncio.create_task(accrue())
+        task = asyncio.create_task(accrue())
+        _tasks.add(task)
+        task.add_done_callback(_done)
         return {"ok": True, "accepted": run_id}
 
     @r_.post("/ports/principal/{pid}/withdraw")
