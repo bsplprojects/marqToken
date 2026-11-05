@@ -1,0 +1,35 @@
+{
+  "summary": "Tested TechPass income fixes. Local-DB engine simulation (gm_v2_sim.py, 95/95 checks pass): sponsor always gets exactly $50 Partner Onboarding, including when the buyer is spilled under another member in MB1, and the MB placement parent gets no PO. Legacy saved partner_onboarding_pct=50 is read as $50. A member enters GM only with own confirmed TP + >=2 directs with confirmed TP; entry is triggered by the 2nd direct's TP or by their own TP. Global BFS order is kept across two interleaved teams, $1 is paid to each GM ancestor, the gm_levels cap is respected, and reprocessing is idempotent. A concurrency race sim (gm_v2_race_sim.py) found a real bug: concurrent TP confirmations cause duplicate GM payouts (13/15 trials). Atlas read-only check: gm_v2_rebuilt set; GM = root 0xc1aca21a + 0x12627aab + 0xeaf52b04, exactly the members with >=2 active directs. Admin API: GET returns partner_onboarding_usd=50, gm_members=3, no 'recent', no pct key. PUT po=-1, 'abc' and gm_min_directs=-1 each return 400 with rules unchanged, and no auth returns 403. Admin UI /admin/income-rules: no Recent TechPass panel; rule-po-usd shows 50; GM panel has 'Active directs to enter' = 2; income-gm-members card = 3; MB1 L1 = 0. Save with unchanged values returns a toast and PO is still 50 after reload; this save also migrated the stored key partner_onboarding_pct to partner_onboarding_usd with the same value.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "income_engine.gm_check / place('GM')", "issue": "Race condition causes double GM payouts. When a member's own TechPass and their directs' TechPass are processed concurrently, two gm_check(addr) calls both pass the 'GM:addr not exists' check. place() returns None for the second call (node exists) or pushes a duplicate child, and gm_check pays ancestors anyway. Repro: tests/gm_v2_race_sim.py gave 13/15 bad trials (root paid $1 2-3x for one entry; once root.children=['A','A'] + DuplicateKeyError). Fix: make entry atomic, e.g. insert a GM claim/lock doc (or insert the GM node first with unique _id and catch DuplicateKeyError) and only pay if this call actually created the node. Also have place() return a distinct sentinel instead of None for 'already placed'.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "Atlas history", "issue": "9 historical tp_partner_onboarding tx on production are $60 each ($540 total, i.e. $90 overpaid vs $50 rule). There are also 4 legacy $1 GM tx from the old GM v1 ($4 total) while GM v2 has only 2 non-root entries. No retro correction was done; confirm with the user whether that is wanted."},
+      {"endpoint": "GET /api/admin/income-rules", "issue": "gm_members counts the root node too (3 = root + 2 qualified). Consider labelling or excluding the root."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/gm_v2_sim.py", "/app/backend/tests/gm_v2_race_sim.py", "/app/backend/tests/atlas_gmv2_check.py"],
+  "action_items": [
+    "HIGH: Make GM entry atomic so concurrent TechPass confirmations can't pay GM ancestors more than once or add duplicate children (see gm_v2_race_sim.py). The same pattern in place() for MB boards should be checked: the pid-exists check followed by children push and insert_one is not atomic.",
+    "SECURITY: production Atlas still has a leftover active SUPER_ADMIN 'TEST_tmp' 0x976c82fd73efd5019928901c58b3a312f4759d2d in admin_users and settings.global.admin_addresses (23 audit_logs). Not created by this run; remove it if it is a stale test admin.",
+    "Decide with the user whether past $60 Partner Onboarding payouts (9 tx) should be corrected."
+  ],
+  "critical_code_review_comments": [
+    "gm_check pays even when place() returned None because the node already existed (race). Pay only after successfully claiming the node.",
+    "place() for GM runs a BFS from the root with one find_one per node on every entry: O(N) DB reads per entry. Fine now, but slow as GM grows; consider a 'next open slot' queue or an index on children count.",
+    "active_directs loads up to 10000 directs and calls distinct each time; acceptable for now.",
+    "tests/atlas_temp_admin.py cleanup deletes ALL new docs in every Atlas collection created since setup. On production this could delete real members/transactions created concurrently. Avoid it; use address-scoped cleanup like atlas_gmv2_check.py."
+  ],
+  "updated_files": ["/app/backend/tests/gm_v2_sim.py", "/app/backend/tests/gm_v2_race_sim.py", "/app/backend/tests/atlas_gmv2_check.py"],
+  "success_rate": {"backend": "95% (all functional checks pass; concurrency race fails)", "frontend": "100%"},
+  "seed_data_creation": "None on Atlas. A temp SUPER_ADMIN was created twice (0x22ae9061..., 0x5f16141e...) and removed: admin_users doc, admin_addresses entry, members doc and one audit_logs entry deleted by id. One income-rules Save with unchanged values was done (stored key migrated pct->usd, value 50). Local DBs merqon_gmv2_test/merqon_gmv2_race were dropped.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run: cd /app/backend && python tests/gm_v2_sim.py (expects FAILS: []) and python tests/gm_v2_race_sim.py (expects 'RACE bad trials: 0/15' after fix). Atlas check: export EXTERNAL_MONGO_URL from the uvicorn process env (/proc/<pid>/environ), EXTERNAL_DB_NAME=merqon_database, then python tests/atlas_gmv2_check.py api (read-only plus temp admin, auto cleanup). For the UI: 'setup' prints a JWT; set localStorage merqon_admin_jwt and merqon_admin_wallet {mode:'metamask',address}; run 'cleanup' afterwards and delete the audit_logs entry by admin_address."
+}

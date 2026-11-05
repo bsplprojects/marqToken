@@ -3,6 +3,8 @@ from collections import deque
 import os
 import secrets
 
+from pymongo.errors import DuplicateKeyError
+
 
 def _mb(levels, net, save):
     return {"levels": levels, "net_profit": net, "upgrade_save": save}
@@ -42,8 +44,12 @@ def build_income_engine(d):
     async def place(board: str, addr: str):
         """Place addr in board tree under nearest sponsor-upline already in that board (BFS spillover)."""
         pid = f"{board}:{addr}"
+        try:  # claim the placement once, so concurrent purchases can't place or pay twice
+            await db.placement_claims.insert_one({"_id": pid, "created_at": d.iso(d.now_utc())})
+        except DuplicateKeyError:
+            return False
         if await db.matrix.find_one({"_id": pid}):
-            return None
+            return False
         m = await db.members.find_one({"_id": addr})
         up, anchor = (m.get("sponsor") if board != "GM" else None), None
         seen = set()
@@ -138,7 +144,8 @@ def build_income_engine(d):
         board = f"MB{b + 1}"
         if await db.matrix.find_one({"_id": f"{board}:{addr}"}):
             return
-        await place(board, addr)
+        if await place(board, addr) is False:
+            return
         levels = r["mb_boards"][b]["levels"]
         ups = await ancestors(board, addr, len(levels))
         paid = 0.0
@@ -183,7 +190,8 @@ def build_income_engine(d):
             return
         if len(await active_directs(addr)) < int(r["gm_min_directs"]):
             return
-        await place("GM", addr)
+        if await place("GM", addr) is False:
+            return
         if not pay:
             return
         ups = await ancestors("GM", addr, int(r["gm_levels"]))
@@ -198,6 +206,7 @@ def build_income_engine(d):
             return
         r = await rules()
         await db.matrix.delete_many({"board": "GM"})
+        await db.placement_claims.delete_many({"_id": {"$regex": "^GM:"}})
         qual = []
         for addr in await db.techpass.distinct("address", {"status": "confirmed"}):
             act = await active_directs(addr)
