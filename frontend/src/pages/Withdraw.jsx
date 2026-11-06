@@ -101,7 +101,7 @@ export default function Withdraw() {
               <span className="font-display font-semibold">Security Checks</span>
             </div>
             <ul className="space-y-2 text-sm text-slate-400">
-              {["Active Merq TechPass", "Amount & minimum validation", "Daily limit & cooldown", "Sufficient available balance", "Large amounts reviewed by admin", "Earned in USDT, paid in real MERQ on BNB Smart Chain"].map((c) => (
+              {["Active Merq TechPass", "Amount & minimum validation", "Sufficient available balance", "Earned in USDT, paid in real MERQ on BNB Smart Chain"].map((c) => (
                 <li key={c} className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-400/70" /> {c}</li>
               ))}
             </ul>

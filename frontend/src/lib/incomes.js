@@ -20,7 +20,7 @@ export const INCOME_GROUPS = [
       { key: "port_partner_onboarding_rewards", slug: "port-partner-onboarding-rewards", label: "Partner Onboarding Rewards", icon: Gift, accent: "violet",
         desc: "5% instant reward when a partner you sponsor buys a Unity Port (Bond)." },
       { key: "port_level_income", slug: "port-level-income", label: "Level Income", icon: Layers3, accent: "rose",
-        desc: "A share of your team's daily port earnings across 8 levels (25% down to 1%)." },
+        desc: "A share of your team's daily port earnings across 10 levels (25% down to 1%)." },
       { key: "port_rank_rewards", slug: "port-rank-rewards", label: "Rank & Rewards", icon: Crown, accent: "amber",
         desc: "One-time bonus each time you reach a new rank, M1 to M7." },
     ],

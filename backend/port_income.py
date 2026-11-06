@@ -14,7 +14,7 @@ PORT_INCOME_DEFAULTS = {
     "unity_tiers": [{"min_usd": 0, "daily_pct": 0.50}, {"min_usd": 1000, "daily_pct": 0.75}, {"min_usd": 5000, "daily_pct": 1.00}],
     "unity_lock_days": 365,
     "sponsor_pct": 5.0,
-    "level_pcts": [25, 15, 10, 5, 4, 3, 2, 1],
+    "level_pcts": [25, 15, 10, 5, 4, 3, 2, 1, 1, 1],
     "level_min_self_usd": 100.0,
     "ranks": [
         {"name": "M1", "leg_usd": 10000, "need_rank": 0, "need_count": 0, "pct": 1.5},
@@ -73,7 +73,10 @@ def build_port_income(d):
 
     async def rules():
         s = await d.get_settings()
-        return {**PORT_INCOME_DEFAULTS, **(s.get("port_income_rules") or {})}
+        out = {**PORT_INCOME_DEFAULTS, **(s.get("port_income_rules") or {})}
+        lv = list(out["level_pcts"])
+        out["level_pcts"] = lv + PORT_INCOME_DEFAULTS["level_pcts"][len(lv):]
+        return out
 
     async def price():
         p, _, _ = await d.live_price(await d.get_swap_config(), await d.get_settings())

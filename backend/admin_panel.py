@@ -867,9 +867,9 @@ def build_admin_router(d):
         pcts = [new["entry_daily_pct"], new["sponsor_pct"]] + [t["daily_pct"] for t in new["unity_tiers"]] + new["level_pcts"] + [x["pct"] for x in new["ranks"]]
         if any(not 0 <= v <= 100 for v in pcts) or new["unity_lock_days"] < 0 or new["level_min_self_usd"] < 0 or not new["unity_tiers"]:
             raise HTTPException(400, "Percentages must be 0-100 and amounts not negative")
-        if len(new["level_pcts"]) != 8 or len(new["ranks"]) != 7 or any(
+        if len(new["level_pcts"]) != 10 or len(new["ranks"]) != 7 or any(
                 not 0 <= x["need_rank"] <= i or x["need_count"] < 0 or x["leg_usd"] < 0 for i, x in enumerate(new["ranks"])):
-            raise HTTPException(400, "8 levels and 7 ranks required; a rank can only require a lower rank")
+            raise HTTPException(400, "10 levels and 7 ranks required; a rank can only require a lower rank")
         await db.settings.update_one({"_id": "global"}, {"$set": {"port_income_rules": new}})
         await audit(au, "update_port_income_rules", "settings", None, {"entry_daily_pct": new["entry_daily_pct"]}, request)
         return {"ok": True, "rules": new}

@@ -415,6 +415,12 @@ async def member_profile(m: dict = Depends(current_member)):
 @api.get("/member/dashboard")
 async def member_dashboard(m: dict = Depends(current_member)):
     _admin_deps.port_maybe_accrue()
+    agg = await db.members.aggregate([
+        {"$match": {"_id": m["_id"]}},
+        {"$graphLookup": {"from": "members", "startWith": "$_id", "connectFromField": "_id", "connectToField": "sponsor",
+                          "as": "team", "maxDepth": 200}},
+        {"$project": {"team": {"_id": 1, "status": 1}}}]).to_list(1)
+    team = agg[0]["team"] if agg else []
     settings = await get_settings()
     price = settings.get("merq_price_usd", 0.0)
     # add live-accruing growth to a preview number
@@ -434,8 +440,8 @@ async def member_dashboard(m: dict = Depends(current_member)):
         "total_income": round(member_total_income(m), 4),
         "network": {
             "direct_members": m["direct_count"],
-            "total_team": m["team_count"],
-            "active_members": await db.members.count_documents({"sponsor": m["_id"], "status": "active"}),
+            "total_team": len(team),
+            "active_members": sum(1 for x in team if x.get("status") == "active"),
             "left_volume": round(m["left_volume"], 2),
             "right_volume": round(m["right_volume"], 2),
             "team_volume": round(m["team_volume"], 2),

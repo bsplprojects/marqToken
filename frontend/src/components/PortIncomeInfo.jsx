@@ -12,8 +12,8 @@ const Levels = ({ info }) => (
   <Box title="Level Income Plan" testid="port-levels">
     <div className={`flex items-center gap-2 text-sm mb-4 ${info.levels_unlocked ? "text-emerald-300" : "text-amber-200"}`}>
       {info.levels_unlocked ? <CheckCircle2 className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
-      {info.levels_unlocked ? `All 8 levels unlocked — your port investment is $${fmt(info.self_invest_usd)}` :
-        `Buy at least $${fmt(info.level_min_self_usd, 0)} in Entry or Unity Port to unlock all 8 levels (you have $${fmt(info.self_invest_usd)})`}
+      {info.levels_unlocked ? `All 10 levels unlocked — your port investment is $${fmt(info.self_invest_usd)}` :
+        `Buy at least $${fmt(info.level_min_self_usd, 0)} in Entry or Unity Port to unlock all 10 levels (you have $${fmt(info.self_invest_usd)})`}
     </div>
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
       {info.level_pcts.map((p, i) => (
