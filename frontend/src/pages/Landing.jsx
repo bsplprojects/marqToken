@@ -95,9 +95,9 @@ export default function Landing() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-12 items-center px-6 sm:px-10 lg:px-16 pt-8 pb-20 max-w-7xl mx-auto">
+      <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center px-4 sm:px-10 lg:px-16 pt-4 sm:pt-8 pb-20 max-w-7xl mx-auto">
         {/* left */}
-        <div className="fade-up">
+        <div className="fade-up order-2 lg:order-1">
           <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/5 px-4 py-1.5 mb-6">
             <Zap className="h-3.5 w-3.5 text-amber-400" />
             <span className="font-mono-merq text-[11px] uppercase tracking-[0.2em] text-amber-300">Decentralized Membership Protocol</span>
@@ -123,7 +123,7 @@ export default function Landing() {
         </div>
 
         {/* right - connect card */}
-        <div className="fade-up lg:pl-8">
+        <div className="fade-up order-1 lg:order-2 lg:pl-8">
           <div className="glass gold-glow rounded-3xl p-8 border border-amber-400/15 max-w-md mx-auto w-full">
             {ref && step === "connect" && !isRegister && (
               <div className="mb-6 rounded-xl border border-cyan-400/20 bg-cyan-400/5 p-3 flex items-center gap-2">
