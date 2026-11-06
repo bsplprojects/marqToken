@@ -14,6 +14,7 @@ def _mb(levels, net, save):
 INCOME_DEFAULTS = {
     "partner_onboarding_usd": 50.0,
     "gm_levels": 20, "gm_amount_per_level": 1.0, "gm_min_directs": 2,
+    "mb_save_per_payout": 4.8387, "mb_min_directs": 2, "gm_deduct_pct": 10.0,
     "mb_boards": [
         _mb([50, 10, 10, 10, 10], 400, 300),
         _mb([50] * 5, 2000, 1100),
@@ -120,34 +121,48 @@ def build_income_engine(d):
     async def log(kind, **kw):
         await db.income_events.insert_one({"_id": secrets.token_hex(12), "kind": kind, **kw, "created_at": d.iso(d.now_utc())})
 
+    async def spots_filled(board, addr, depth=5):
+        n, frontier = 0, [addr]
+        for _ in range(depth):
+            nodes = await db.matrix.find({"_id": {"$in": [f"{board}:{x}" for x in frontier]}}, {"children": 1}).to_list(100000)
+            frontier = [c for x in nodes for c in x["children"]]
+            n += len(frontier)
+            if not frontier:
+                break
+        return n
+
     async def mb_receive(addr, b, usd, source, r, price, depth=0):
-        """Receiver gets usd from board b: net first, then save for next board; auto-upgrade when saved."""
+        """One spot filled under addr on board b: save a fixed amount, pay the rest; move up when all spots are filled."""
         boards = r["mb_boards"]
-        sid = f"MB{b + 1}:{addr}"
-        st = await db.mb_state.find_one({"_id": sid}) or {"_id": sid, "member": addr, "board": b + 1, "net": 0.0,
-                                                               "saved": 0.0, "upgraded": False}
-        cfg = boards[b]
-        has_next = b + 1 < len(boards) and cfg["upgrade_save"] > 0
-        if st["upgraded"] or not has_next:
-            pay, save = usd, 0.0
+        board = f"MB{b + 1}"
+        sid = f"{board}:{addr}"
+        st = await db.mb_state.find_one({"_id": sid})
+        if not st:
+            st = {"_id": sid, "member": addr, "board": b + 1, "net": 0.0, "saved": 0.0, "upgraded": False, "filled": 0}
+        if "filled" not in st:
+            st["filled"] = max(0, await spots_filled(board, addr) - 1)
+        st["filled"] += 1
+        has_next = b + 1 < len(boards)
+        if len(await active_directs(addr)) < int(r.get("mb_min_directs", 2)):
+            await log("mb_flushed", member=addr, board=board, usd=usd, source=source)
         else:
-            pay = min(usd, max(0.0, cfg["net_profit"] - st["net"]))
-            save = min(usd - pay, max(0.0, cfg["upgrade_save"] - st["saved"]))
-            pay += usd - pay - save
-        st["net"] += pay
-        st["saved"] += save
-        if pay > 0:
-            await credit(addr, "tp_momentum_booster", round(pay, 4), {"board": f"MB{b + 1}", "from": source}, price)
-        ready = not st["upgraded"] and has_next and st["saved"] >= cfg["upgrade_save"] - 1e-9
+            save = min(usd, float(r["mb_save_per_payout"])) if has_next and not st["upgraded"] else 0.0
+            pay = usd - save
+            st["net"] += pay
+            st["saved"] += save
+            if pay > 0:
+                await credit(addr, "tp_momentum_booster", pay, {"board": board, "from": source, "saved": save}, price)
+        spots = 2 ** 6 - 2  # 2+4+8+16+32 = 62 spots in 5 levels
+        ready = has_next and not st["upgraded"] and st["filled"] >= spots
         if ready:
             st["upgraded"] = True
         await db.mb_state.replace_one({"_id": sid}, st, upsert=True)
         if ready:
             await db.celebrations.insert_one({"_id": secrets.token_hex(12), "member": addr, "kind": "mb_upgrade",
-                                              "title": f"MB{b + 2}", "from_board": f"MB{b + 1}", "seen": False,
+                                              "title": f"MB{b + 2}", "from_board": board, "seen": False,
                                               "created_at": d.iso(d.now_utc())})
-        if ready and depth < 10:
-            await mb_enter(addr, b + 1, r, price, funded=st["saved"], depth=depth + 1)
+            if depth < 10:
+                await mb_enter(addr, b + 1, r, price, funded=st["saved"], depth=depth + 1)
 
     async def mb_enter(addr, b, r, price, funded=None, depth=0):
         board = f"MB{b + 1}"
@@ -205,7 +220,9 @@ def build_income_engine(d):
             return
         ups = await ancestors("GM", addr, int(r["gm_levels"]))
         for lvl, up in enumerate(ups, start=1):
-            await credit(up, "tp_global_momentum", float(r["gm_amount_per_level"]), {"from": addr, "level": lvl}, price)
+            amt = float(r["gm_amount_per_level"])
+            cut = amt * float(r.get("gm_deduct_pct", 10)) / 100
+            await credit(up, "tp_global_momentum", amt - cut, {"from": addr, "level": lvl, "deducted": cut}, price)
         await log("gm_entry", member=addr, paid_levels=len(ups), usd=len(ups) * float(r["gm_amount_per_level"]))
         await db.celebrations.insert_one({"_id": secrets.token_hex(12), "member": addr, "kind": "gm_entry",
                                           "title": "Global Momentum", "seen": False, "created_at": d.iso(d.now_utc())})
@@ -239,7 +256,8 @@ def build_income_engine(d):
             st = await db.mb_state.find_one({"_id": f"MB{i + 1}:{addr}"}) or {}
             out.append({"board": f"MB{i + 1}", "joined": bool(pos), "team": len(pos["children"]) if pos else 0,
                         "net": round(st.get("net", 0.0), 2), "net_cap": cfg["net_profit"],
-                        "saved": round(st.get("saved", 0.0), 2), "save_target": cfg["upgrade_save"],
+                        "saved": round(st.get("saved", 0.0), 4), "save_target": round(float(r["mb_save_per_payout"]) * 62, 2),
+                        "filled": st.get("filled", 0), "spots": 62,
                         "upgraded": st.get("upgraded", False), "levels": cfg["levels"]})
         return out
 

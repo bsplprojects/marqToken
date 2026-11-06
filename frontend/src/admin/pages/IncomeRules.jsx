@@ -54,14 +54,22 @@ export default function IncomeRules() {
           <Field testid="rule-po-usd" label="$ per TechPass to the direct sponsor (always the sponsor, even for spillover)" value={f.partner_onboarding_usd} disabled={!canEdit} onChange={(v) => setF({ ...f, partner_onboarding_usd: v })} />
         </Panel>
         <Panel title="Global Momentum (one company-wide tree)" className="p-5">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Field testid="rule-gm-levels" label="Levels paid upward" value={f.gm_levels} disabled={!canEdit} onChange={(v) => setF({ ...f, gm_levels: v })} />
             <Field testid="rule-gm-amount" label="$ per level" value={f.gm_amount_per_level} disabled={!canEdit} onChange={(v) => setF({ ...f, gm_amount_per_level: v })} />
             <Field testid="rule-gm-directs" label="Active directs to enter" value={f.gm_min_directs} disabled={!canEdit} onChange={(v) => setF({ ...f, gm_min_directs: v })} />
+            <Field testid="rule-gm-deduct" label="Deduct % per payout" value={f.gm_deduct_pct} disabled={!canEdit} onChange={(v) => setF({ ...f, gm_deduct_pct: v })} />
           </div>
-          <p className="text-xs text-slate-500 mt-3">An active member enters the tree once they have this many active directs, filled level by level. Each entry pays the set $ to every upline up to the set levels.</p>
+          <p className="text-xs text-slate-500 mt-3">An active member enters the tree once they have this many active directs, filled level by level. Each entry pays the set $ (minus the deduction) to every upline up to the set levels.</p>
         </Panel>
       </div>
+      <Panel title="Momentum Booster rules" className="p-5 mb-5">
+        <div className="grid grid-cols-2 gap-3 max-w-lg">
+          <Field testid="rule-mb-save" label="$ saved from every payout" value={f.mb_save_per_payout} disabled={!canEdit} onChange={(v) => setF({ ...f, mb_save_per_payout: v })} />
+          <Field testid="rule-mb-directs" label="Active directs needed (else flushed)" value={f.mb_min_directs} disabled={!canEdit} onChange={(v) => setF({ ...f, mb_min_directs: v })} />
+        </div>
+        <p className="text-xs text-slate-500 mt-3">Every payout saves this amount for the next board and pays the rest. A member moves to the next board when all 62 spots below them are filled (MB1 → MB8). Members with fewer active directs get nothing; the company keeps it.</p>
+      </Panel>
       <Panel title="Momentum Booster Boards (2-wide, 5 levels, built from each sponsor's team)" className="mb-5">
         <Table columns={[{ label: "Board" }, { label: "Members" }, ...[1, 2, 3, 4, 5].map((l) => ({ label: `L${l} $` })), { label: "Net profit $" }, { label: "Save for next $" }]}>
           {f.mb_boards.map((b, i) => (

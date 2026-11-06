@@ -738,7 +738,7 @@ async def income_stream(key: str, m: dict = Depends(current_member)):
     if key not in INCOME_STREAMS:
         raise HTTPException(404, "Unknown income stream")
     txs = await db.transactions.find({"address": m["_id"], "type": key}).sort("created_at", -1).to_list(500)
-    return {"key": key, "group": INCOME_STREAMS[key], "total": round(m.get("income", {}).get(key, 0.0), 4),
+    return {"key": key, "group": INCOME_STREAMS[key], "total": round(m.get("income", {}).get(key, 0.0), 6),
             "total_usd": round(m.get("income_usd", {}).get(key, 0.0), 2),
             "rules_configured": True,
             "boards": await _admin_deps.member_mb(m["_id"]) if key == "tp_momentum_booster" else None,

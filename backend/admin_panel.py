@@ -814,6 +814,9 @@ def build_admin_router(d):
                 "gm_levels": int(payload.get("gm_levels", cur["gm_levels"])),
                 "gm_amount_per_level": float(payload.get("gm_amount_per_level", cur["gm_amount_per_level"])),
                 "gm_min_directs": int(payload.get("gm_min_directs", cur["gm_min_directs"])),
+                "gm_deduct_pct": float(payload.get("gm_deduct_pct", cur["gm_deduct_pct"])),
+                "mb_save_per_payout": float(payload.get("mb_save_per_payout", cur["mb_save_per_payout"])),
+                "mb_min_directs": int(payload.get("mb_min_directs", cur["mb_min_directs"])),
                 "mb_boards": [{"levels": [float(x) for x in b["levels"]], "net_profit": float(b["net_profit"]),
                                "upgrade_save": float(b["upgrade_save"])} for b in payload.get("mb_boards", cur["mb_boards"])],
             }

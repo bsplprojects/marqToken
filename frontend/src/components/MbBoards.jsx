@@ -22,10 +22,11 @@ export const MbBoards = ({ boards }) => (
           <div className="mt-3 text-xs font-mono-merq">
             <div className="flex justify-between text-slate-400"><span>Net profit</span><span className="text-white">${fmt(b.net)} / ${fmt(b.net_cap, 0)}</span></div>
             <Bar v={b.net} max={b.net_cap} color="bg-emerald-400" />
-            {b.save_target > 0 && (
+            {b.board !== "MB8" && (
               <>
-                <div className="flex justify-between text-slate-400 mt-2"><span>Upgrade savings</span><span className="text-white">${fmt(b.saved)} / ${fmt(b.save_target, 0)}</span></div>
-                <Bar v={b.saved} max={b.save_target} color="bg-amber-400" />
+                <div className="flex justify-between text-slate-400 mt-2"><span>Upgrade savings</span><span data-testid={`mb-saved-${b.board}`} className="text-white">${fmt(b.saved, 4)}</span></div>
+                <div className="flex justify-between text-slate-400 mt-2"><span>Spots filled</span><span data-testid={`mb-filled-${b.board}`} className="text-white">{b.filled ?? 0} / {b.spots ?? 62}</span></div>
+                <Bar v={b.filled ?? 0} max={b.spots ?? 62} color="bg-amber-400" />
               </>
             )}
           </div>

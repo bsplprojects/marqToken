@@ -11,6 +11,7 @@ import { Clock, ExternalLink } from "lucide-react";
 export default function IncomeStream() {
   const { slug } = useParams();
   const found = findStream(slug);
+  const dp = found?.item.key === "port_level_income" ? 5 : 2;
   const { data } = useQuery({
     queryKey: ["income-stream", found?.item.key],
     queryFn: async () => (await api.get(`/income/stream/${found.item.key}`)).data,
@@ -27,7 +28,7 @@ export default function IncomeStream() {
         <div className="glass gold-glow rounded-3xl border border-amber-400/15 p-7">
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-400/10 text-amber-400 mb-5"><Icon className="h-6 w-6" /></span>
           <div className="font-mono-merq text-[10px] uppercase tracking-widest text-slate-500">Total earned</div>
-          <div data-testid="income-stream-total" className="font-mono-merq text-4xl font-black gold-text mt-1">{fmt(data?.total ?? 0)}</div>
+          <div data-testid="income-stream-total" className="font-mono-merq text-4xl font-black gold-text mt-1">{fmt(data?.total ?? 0, dp)}</div>
           <div className="text-sm text-slate-500 mt-1">USDT</div>
           {data && !data.rules_configured && (
             <div data-testid="income-stream-pending" className="flex items-start gap-2 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 mt-6 text-xs text-amber-200 leading-relaxed">
@@ -43,7 +44,7 @@ export default function IncomeStream() {
             <div className="space-y-2">
               {data.history.map((h) => (
                 <div key={h.id} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/5 px-4 py-3">
-                  <span className="font-mono-merq text-emerald-400 font-semibold">+{fmt(h.amount)} USDT</span>
+                  <span className="font-mono-merq text-emerald-400 font-semibold">+{fmt(h.amount, dp)} USDT</span>
                   {(h.board || h.level || h.rank || h.port) && <span className="rounded-full border border-amber-400/25 px-2 py-0.5 font-mono-merq text-[10px] uppercase text-amber-300">{h.board || h.rank || (h.level ? `Level ${h.level}` : `${h.port} port`)}</span>}
                   {h.from && <span className="font-mono-merq text-[11px] text-slate-500">from {h.from.slice(0, 6)}…{h.from.slice(-4)}</span>}
                   <span className="ml-auto font-mono-merq text-[11px] text-slate-500">{new Date(h.created_at).toLocaleString()}</span>
