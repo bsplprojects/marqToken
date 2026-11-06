@@ -188,10 +188,18 @@ def build_admin_router(d):
                         "right": {"members": x["right_count"], "volume": round(x["right_volume"], 2)},
                         "team_volume": round(x["team_volume"], 2)},
             "activity": [{"type": t["type"], "amount": t["amount"], "status": t["status"],
-                          "tx_hash": t["tx_hash"], "bscscan_url": d.BSCSCAN_BASE + t["tx_hash"],
+                          "tx_hash": t.get("tx_hash"), "bscscan_url": d.BSCSCAN_BASE + t["tx_hash"] if t.get("tx_hash") else None,
                           "created_at": t["created_at"]} for t in txs[:50]],
             "notes": x.get("admin_notes", []),
         }
+
+    @r.post("/members/{address}/view-as")
+    async def member_view_as(address: str, request: Request, au: dict = Depends(require("members", write=True))):
+        x = await db.members.find_one({"_id": address.lower()})
+        if not x:
+            raise HTTPException(404, "Member not found")
+        await audit(au, "view_as_member", "members", x["_id"], {}, request)
+        return {"token": d.make_view_jwt(x["_id"], au["_id"]), "expires_in_minutes": 30}
 
     class MemberAction(BaseModel):
         action: str
@@ -247,7 +255,7 @@ def build_admin_router(d):
             q["$or"] = [{"address": {"$regex": search.lower()}}, {"tx_hash": {"$regex": search}}]
         docs = await db.transactions.find(q).sort("created_at", -1).to_list(1000)
         s = await d.get_settings()
-        return [{"id": t["_id"], "tx_hash": t["tx_hash"], "bscscan_url": d.BSCSCAN_BASE + t["tx_hash"],
+        return [{"id": t["_id"], "tx_hash": t.get("tx_hash"), "bscscan_url": d.BSCSCAN_BASE + t["tx_hash"] if t.get("tx_hash") else None,
                  "address": d.short(t["address"]), "full": t["address"], "amount": t["amount"], "token": "MERQ",
                  "date": t["created_at"], "confirmations": s.get("block_confirmations", 12),
                  "status": "confirmed", "reconciliation": "matched"} for t in docs]
@@ -357,7 +365,7 @@ def build_admin_router(d):
                 "count": len(docs),
                 "recent": [{"type": t["type"], "address": d.short(t["address"]), "amount": t["amount"],
                             "status": t["status"], "created_at": t["created_at"],
-                            "tx_hash": t["tx_hash"], "bscscan_url": d.BSCSCAN_BASE + t["tx_hash"],
+                            "tx_hash": t.get("tx_hash"), "bscscan_url": d.BSCSCAN_BASE + t["tx_hash"] if t.get("tx_hash") else None,
                             "meta": t.get("meta", {})} for t in docs[:100]]}
 
     @r.get("/income/referral")
@@ -470,7 +478,7 @@ def build_admin_router(d):
         return {"rpc_status": "simulated", "latest_block": 40000000 + int(time.time()) % 100000,
                 "pending": await db.transactions.count_documents({"status": "pending"}),
                 "failed": 0, "simulated": True,
-                "transfers": [{"tx_hash": t["tx_hash"], "bscscan_url": d.BSCSCAN_BASE + t["tx_hash"],
+                "transfers": [{"tx_hash": t.get("tx_hash"), "bscscan_url": d.BSCSCAN_BASE + t["tx_hash"] if t.get("tx_hash") else None,
                                "type": t["type"], "amount": t["amount"], "address": d.short(t["address"]),
                                "status": t["status"], "created_at": t["created_at"]} for t in txs]}
 
@@ -560,7 +568,7 @@ def build_admin_router(d):
     async def _report_rows(rtype):
         if rtype == "deposits":
             docs = await db.transactions.find({"type": "deposit"}).sort("created_at", -1).to_list(5000)
-            return ["date", "member", "amount", "tx_hash"], [[t["created_at"], t["address"], t["amount"], t["tx_hash"]] for t in docs]
+            return ["date", "member", "amount", "tx_hash"], [[t["created_at"], t["address"], t["amount"], t.get("tx_hash")] for t in docs]
         if rtype == "withdrawals":
             docs = await db.withdrawals.find({}).sort("created_at", -1).to_list(5000)
             return ["id", "member", "amount", "net", "status", "date"], [[w["_id"], w["address"], w["amount"], w["net"], w["status"], w["created_at"]] for w in docs]
@@ -593,7 +601,7 @@ def build_admin_router(d):
     @r.get("/reconciliation")
     async def reconciliation(au: dict = Depends(require("reconciliation"))):
         deps = await db.transactions.find({"type": "deposit"}).sort("created_at", -1).to_list(500)
-        rows = [{"tx_hash": t["tx_hash"], "bscscan_url": d.BSCSCAN_BASE + t["tx_hash"],
+        rows = [{"tx_hash": t.get("tx_hash"), "bscscan_url": d.BSCSCAN_BASE + t["tx_hash"] if t.get("tx_hash") else None,
                  "ledger_amount": t["amount"], "chain_amount": t["amount"], "status": "matched",
                  "created_at": t["created_at"]} for t in deps]
         return {"summary": {"matched": len(rows), "mismatch": 0, "pending": 0, "manual_review": 0},

@@ -18,6 +18,7 @@ import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import AdminApp from "@/admin/AdminApp";
 import MarketingLanding from "@/pages/MarketingLanding";
+import ViewAs, { ViewAsBanner } from "@/pages/ViewAs";
 
 function Protected({ children, adminOnly }) {
   const { member, loading } = useAuth();
@@ -46,7 +47,9 @@ function App() {
           }}
         />
         <BrowserRouter>
+          <ViewAsBanner />
           <Routes>
+            <Route path="/view-as" element={<ViewAs />} />
             <Route path="/" element={<MarketingLanding />} />
             <Route path="/app" element={<Landing />} />
             <Route path="/register" element={<Landing />} />

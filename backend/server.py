@@ -294,12 +294,20 @@ def make_jwt(address: str, is_admin: bool) -> str:
     )
 
 
-async def current_member(cred: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+def make_view_jwt(address: str, admin_address: str) -> str:
+    n = now_utc()
+    return jwt.encode({"sub": address.lower(), "admin": False, "view_as": admin_address, "iss": JWT_ISSUER, "iat": n,
+                       "exp": n + timedelta(minutes=30)}, JWT_SECRET, algorithm=JWT_ALG)
+
+
+async def current_member(request: Request, cred: HTTPAuthorizationCredentials = Depends(security)) -> dict:
     try:
         payload = jwt.decode(cred.credentials, JWT_SECRET, algorithms=[JWT_ALG], issuer=JWT_ISSUER,
                              options={"require": ["sub", "exp", "iss"]})
     except jwt.PyJWTError:
         raise HTTPException(401, "Invalid or expired session")
+    if payload.get("view_as") and request.method != "GET":
+        raise HTTPException(403, "View-only session: an admin is viewing this account and can't make changes")
     m = await db.members.find_one({"_id": payload["sub"]})
     if not m:
         raise HTTPException(404, "Member not registered")
@@ -751,7 +759,7 @@ async def income_history(m: dict = Depends(current_member)):
     income_types = ["referral", "profit_growth", "pg_commission", "reward", "autopool"]
     txs = await db.transactions.find({"address": m["_id"], "type": {"$in": income_types}}).sort("created_at", -1).to_list(500)
     return [{"id": t["_id"], "type": t["type"], "amount": t["amount"], "status": t["status"],
-             "tx_hash": t["tx_hash"], "bscscan_url": BSCSCAN_BASE + t["tx_hash"],
+             "tx_hash": t.get("tx_hash"), "bscscan_url": BSCSCAN_BASE + t["tx_hash"] if t.get("tx_hash") else None,
              "created_at": t["created_at"], "meta": t.get("meta", {})} for t in txs]
 
 
@@ -759,7 +767,7 @@ async def income_history(m: dict = Depends(current_member)):
 async def transactions(m: dict = Depends(current_member)):
     txs = await db.transactions.find({"address": m["_id"]}).sort("created_at", -1).to_list(500)
     return [{"id": t["_id"], "type": t["type"], "amount": t["amount"], "status": t["status"],
-             "tx_hash": t["tx_hash"], "bscscan_url": BSCSCAN_BASE + t["tx_hash"],
+             "tx_hash": t.get("tx_hash"), "bscscan_url": BSCSCAN_BASE + t["tx_hash"] if t.get("tx_hash") else None,
              "created_at": t["created_at"], "meta": t.get("meta", {})} for t in txs]
 
 
@@ -1073,7 +1081,7 @@ _admin_deps = _types.SimpleNamespace(
     build_sponsor_tree=build_sponsor_tree, build_placement_tree=build_placement_tree,
     current_member=current_member, accrued_for_position=accrued_for_position,
     BSCSCAN_BASE=BSCSCAN_BASE, ADMIN_DEMO_ADDRESS=ADMIN_DEMO_ADDRESS,
-    get_swap_config=get_swap_config, logger=logger,
+    get_swap_config=get_swap_config, logger=logger, make_view_jwt=make_view_jwt,
     process_payout=process_payout, refresh_sent=refresh_sent, treasury_status=treasury_status,
 )
 app.include_router(build_techpass(_admin_deps))

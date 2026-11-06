@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { api } from "@/lib/api";
+import { api, viewToken } from "@/lib/api";
 import { getStoredWallet, clearWallet, signMessage } from "@/lib/wallet";
 import { toast } from "sonner";
 
@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("merqon_jwt");
+    const token = viewToken() || localStorage.getItem("merqon_jwt");
     (async () => {
       if (token) await loadProfile();
       await loadPrice();

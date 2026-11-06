@@ -5,7 +5,11 @@ import { adminApi } from "../adminApi";
 import { useAdminAuth } from "../AdminAuth";
 import { useAdminData, AHeader, Panel, Table, Pill, KCard, Btn, Loading, fmt, dt } from "../ui";
 import { INCOME_META } from "@/lib/format";
-import { ArrowLeft, Ban, CheckCircle2, Pause, StickyNote, ExternalLink } from "lucide-react";
+import { INCOME_GROUPS } from "@/lib/incomes";
+
+const STREAM_LABEL = Object.fromEntries(INCOME_GROUPS.flatMap((g) => g.items.map((i) => [i.key, `${g.label} · ${i.label}`])));
+const label = (k) => INCOME_META[k]?.label || STREAM_LABEL[k] || k.replace(/_/g, " ");
+import { ArrowLeft, Ban, CheckCircle2, Pause, StickyNote, ExternalLink, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 export default function MemberDetail() {
@@ -14,7 +18,7 @@ export default function MemberDetail() {
   const qc = useQueryClient();
   const { can } = useAdminAuth();
   const [note, setNote] = useState("");
-  const { data, isLoading } = useAdminData(["adm-member", address], `/members/${address}`);
+  const { data, isLoading, error } = useAdminData(["adm-member", address], `/members/${address}`, { retry: false });
   const canEdit = can("members", true);
 
   const act = async (action, extra = {}) => {
@@ -26,6 +30,15 @@ export default function MemberDetail() {
     } catch (e) { toast.error(e?.response?.data?.detail || "Failed"); }
   };
 
+  const viewAs = async () => {
+    const tab = window.open("", "_blank");
+    try {
+      const { data: r } = await adminApi.post(`/members/${address}/view-as`);
+      tab.location.href = `/view-as#token=${r.token}`;
+    } catch (e) { tab?.close(); toast.error(e?.response?.data?.detail || "Could not open member view"); }
+  };
+
+  if (error) return <div data-testid="member-detail-error" className="text-sm text-rose-300 p-6">{error?.response?.data?.detail || "Could not load this member"}</div>;
   if (isLoading || !data) return <Loading />;
   const o = data.overview, f = data.financial, n = data.network;
 
@@ -36,6 +49,7 @@ export default function MemberDetail() {
       </button>
       <AHeader title={o.member_id} subtitle={o.address}>
         <Pill status={o.status} />
+        {canEdit && <Btn testid="member-view-as-btn" onClick={viewAs}><Eye className="h-4 w-4" /> Login as member (view only)</Btn>}
       </AHeader>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
@@ -51,7 +65,7 @@ export default function MemberDetail() {
             {Object.entries(f.income).map(([k, v]) => (
               <div key={k} className="flex justify-between text-sm">
                 <span className="flex items-center gap-2 text-slate-400">
-                  <span className="h-2 w-2 rounded-full" style={{ background: INCOME_META[k]?.color }} />{INCOME_META[k]?.label}</span>
+                  <span className="h-2 w-2 rounded-full" style={{ background: INCOME_META[k]?.color }} />{label(k)}</span>
                 <span className="font-mono-merq text-white">{fmt(v)}</span>
               </div>
             ))}
@@ -99,11 +113,11 @@ export default function MemberDetail() {
           <Table columns={[{ label: "Type" }, { label: "Amount", right: true }, { label: "Status" }, { label: "Date" }, { label: "Tx", right: true }]}>
             {data.activity.map((t, i) => (
               <tr key={i} className="border-b border-white/5 hover:bg-white/5">
-                <td className="px-5 py-2.5 text-slate-200">{INCOME_META[t.type]?.label || t.type}</td>
+                <td className="px-5 py-2.5 text-slate-200">{label(t.type)}</td>
                 <td className={`px-5 py-2.5 text-right font-mono-merq ${t.amount < 0 ? "text-rose-400" : "text-emerald-400"}`}>{t.amount < 0 ? "" : "+"}{fmt(t.amount)}</td>
                 <td className="px-5 py-2.5"><Pill status={t.status} /></td>
                 <td className="px-5 py-2.5 text-slate-500 text-xs">{dt(t.created_at)}</td>
-                <td className="px-5 py-2.5 text-right"><a href={t.bscscan_url} target="_blank" rel="noreferrer" className="text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 text-xs">View <ExternalLink className="h-3 w-3" /></a></td>
+                <td className="px-5 py-2.5 text-right">{t.bscscan_url ? <a href={t.bscscan_url} target="_blank" rel="noreferrer" className="text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 text-xs">View <ExternalLink className="h-3 w-3" /></a> : <span className="text-xs text-slate-600">—</span>}</td>
               </tr>
             ))}
           </Table>
