@@ -9,6 +9,7 @@ from typing import Optional, List, Any
 import jwt
 import requests
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request
+from fastapi.responses import Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -826,13 +827,29 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
             hrs = settings["withdraw_cooldown_hours"] - delta.total_seconds() / 3600.0
             raise HTTPException(400, f"Cooldown active. Try again in {hrs:.1f}h")
     q = await withdraw_calc(amt, settings)
+    # --- Pre-flight treasury check: reject instantly if MERQ or BNB is low ---
+    auto = amt <= float(settings.get("withdraw_auto_approve_under", 5000))
+    if auto:
+        swap = await get_swap_config()
+        try:
+            import asyncio as _aio
+            ts = await _aio.to_thread(treasury_status, swap)
+            need_merq = q["merq_receive"] + q["merq_fee"]
+            if ts.get("merq_balance") is not None and ts["merq_balance"] < need_merq:
+                raise HTTPException(400, "Withdrawal temporarily unavailable — treasury MERQ balance is low. Please try again later.")
+            if ts.get("bnb_balance") is not None and ts["bnb_balance"] < 0.002:
+                raise HTTPException(400, "Withdrawal temporarily unavailable — treasury needs BNB for gas. Please try again later.")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(f"Treasury pre-check failed: {e}")
+            raise HTTPException(400, "Withdrawal temporarily unavailable — unable to verify treasury. Please try again later.")
     res = await db.members.update_one({"_id": m["_id"], "available": {"$gte": amt}}, {
         "$inc": {"available": -amt},
         "$set": {"last_withdraw_at": iso(now_utc()), "withdrawn_today": used + amt, "withdrawn_today_date": today},
     })
     if not res.modified_count:
         raise HTTPException(400, "Insufficient available balance")
-    auto = amt <= float(settings.get("withdraw_auto_approve_under", 5000))
     wid = "WD-" + secrets.token_hex(5).upper()
     status = "approved" if auto else "pending"
     wdoc = {
@@ -848,6 +865,14 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
     })
     if auto:
         wdoc = await process_payout(_admin_deps, wid)
+        if wdoc.get("status") == "payout_failed":
+            # Refund member balance immediately if on-chain payout failed
+            await db.members.update_one({"_id": m["_id"]}, {
+                "$inc": {"available": amt, "withdrawn_today": -amt},
+            })
+            await db.transactions.update_one({"meta.request_id": wid}, {"$set": {"status": "failed"}})
+            await db.withdrawals.update_one({"_id": wid}, {"$set": {"status": "failed"}})
+            raise HTTPException(400, wdoc.get("reason") or "Withdrawal failed — your balance has been restored. Please try again later.")
     msg = {"sent": "MERQ sent to your wallet — confirming on-chain",
            "pending": "Withdrawal requested — waiting for admin approval",
            "payout_failed": "Withdrawal is queued — the team will complete the transfer shortly"}.get(wdoc["status"], "Withdrawal requested")
@@ -1021,6 +1046,11 @@ async def startup():
     await db.autopool.create_index("status")
     await db.withdrawals.create_index("status")
     await db.audit_logs.create_index("created_at")
+    await db.important_links.create_index("order")
+    try:
+        _init_storage()
+    except Exception as e:
+        logger.warning(f"Object storage init failed (will retry on first use): {e}")
     settings = await get_settings()
     # the public demo key is never an admin
     await db.admin_users.update_one({"_id": ADMIN_DEMO_ADDRESS.lower()}, {"$set": {"status": "disabled"}})
@@ -1069,6 +1099,24 @@ async def startup():
 async def shutdown():
     client.close()
 
+
+# ----------------------------- important links (public) -----------------------------
+from storage import init_storage as _init_storage, get_object as _get_object
+
+@api.get("/important-links")
+async def public_important_links():
+    docs = await db.important_links.find({"active": True}).sort("order", 1).to_list(200)
+    return [{"id": x["_id"], "name": x["name"], "url": x["url"],
+             "image_path": x.get("image_path"), "order": x.get("order", 0)} for x in docs]
+
+@api.get("/files/{path:path}")
+async def serve_file(path: str):
+    try:
+        data, content_type = _get_object(path)
+        return Response(content=data, media_type=content_type,
+                        headers={"Cache-Control": "public, max-age=86400"})
+    except Exception:
+        raise HTTPException(404, "File not found")
 
 app.include_router(api)
 

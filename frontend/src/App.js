@@ -16,6 +16,7 @@ import Port from "@/pages/Port";
 import BoardTrees from "@/pages/BoardTrees";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
+import ImportantLinks from "@/pages/ImportantLinks";
 import AdminApp from "@/admin/AdminApp";
 import MarketingLanding from "@/pages/MarketingLanding";
 import ViewAs, { ViewAsBanner } from "@/pages/ViewAs";
@@ -59,6 +60,7 @@ function App() {
             <Route path="/transactions" element={<Protected><Transactions /></Protected>} />
             <Route path="/withdraw" element={<Protected><Withdraw /></Protected>} />
             <Route path="/swap" element={<Protected><Swap /></Protected>} />
+            <Route path="/links" element={<Protected><ImportantLinks /></Protected>} />
             <Route path="/techpass" element={<Protected><TechPass /></Protected>} />
             <Route path="/ports/:port" element={<Protected><Port /></Protected>} />
             <Route path="/trees" element={<Protected><BoardTrees /></Protected>} />

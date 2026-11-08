@@ -9,7 +9,7 @@ import { CelebrationBanner } from "@/components/CelebrationBanner";
 import {
   LayoutDashboard, Network as NetworkIcon,
   User, Settings as SettingsIcon,
-  LogOut, Copy, Menu, X, Hexagon, ArrowLeftRight, Ticket, DoorOpen, ArrowUpFromLine, GitFork,
+  LogOut, Copy, Menu, X, Hexagon, ArrowLeftRight, Ticket, DoorOpen, ArrowUpFromLine, GitFork, Link2,
 } from "lucide-react";
 
 const NAV = [
@@ -22,6 +22,7 @@ const NAV = [
   { income: true },
   { to: "/withdraw", label: "Withdraw", icon: ArrowUpFromLine, tid: "nav-withdraw" },
   { to: "/swap", label: "Swap", icon: ArrowLeftRight, tid: "nav-swap" },
+  { to: "/links", label: "Important Links", icon: Link2, tid: "nav-links" },
   { to: "/profile", label: "My Profile", icon: User, tid: "nav-profile" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, tid: "nav-settings" },
 ];

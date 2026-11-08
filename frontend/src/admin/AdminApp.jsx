@@ -32,6 +32,7 @@ import PortIncomeRules from "./pages/PortIncomeRules";
 import WalletsContracts from "./pages/WalletsContracts";
 import GmTree from "./pages/GmTree";
 import IncomeReports from "./pages/IncomeReports";
+import ImportantLinks from "./pages/ImportantLinks";
 
 function Shell() {
   const { admin, loading } = useAdminAuth();
@@ -72,6 +73,7 @@ function Shell() {
         <Route path="wallets" element={<WalletsContracts />} />
         <Route path="gm-tree" element={<GmTree />} />
         <Route path="income-reports" element={<IncomeReports />} />
+        <Route path="important-links" element={<ImportantLinks />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </AdminLayout>

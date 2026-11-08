@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Network, Trophy,
   ArrowUpFromLine, Boxes,
   FileBarChart, Bell, Headphones, UserCog,
-  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, Ticket, DoorOpen, Percent, BarChart3, Wallet, Globe2,
+  ScrollText, Activity, AlertTriangle, Settings as Cog, LogOut, Hexagon, ShieldCheck, Menu, X, Ticket, DoorOpen, Percent, BarChart3, Wallet, Globe2, Link2,
 } from "lucide-react";
 
 const NAV = [
@@ -30,6 +30,7 @@ const NAV = [
     { to: "withdrawals", label: "Withdrawals", icon: ArrowUpFromLine, mod: "withdrawals" },
   ]},
   { group: "Control", items: [
+    { to: "important-links", label: "Important Links", icon: Link2, mod: "settings" },
     { to: "reports", label: "Reports", icon: FileBarChart, mod: "reports" },
     { to: "notifications", label: "Notifications", icon: Bell, mod: "notifications" },
     { to: "support", label: "Support", icon: Headphones, mod: "support" },

@@ -6,13 +6,16 @@ import re
 import csv
 import time
 import secrets
+import uuid
 from datetime import timedelta
 
 import requests
-from fastapi import APIRouter, HTTPException, Depends, Request, Query
+from fastapi import APIRouter, HTTPException, Depends, Request, Query, File, UploadFile, Form, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
+
+from storage import init_storage, put_object, get_object, upload_image
 
 # ----------------------------- RBAC -----------------------------
 MODULES = [
@@ -1190,6 +1193,89 @@ def build_admin_router(d):
             "ports.entry": {**ports["entry"], "receive_wallet": clean["entry_wallet"]},
             "ports.unity": {**ports["unity"], "receive_wallet": clean["unity_wallet"]}}})
         await audit(au, "update_wallets_contracts", "token", None, {**clean, "rpc_url": rpc, **nums}, request)
+        return {"ok": True}
+
+    # ------------------------- important links -------------------------
+    ALLOWED_IMG_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"}
+    MAX_IMG_SIZE = 5 * 1024 * 1024  # 5 MB
+
+    @r.get("/important-links")
+    async def important_links_list(au: dict = Depends(require("settings"))):
+        docs = await db.important_links.find({}).sort("order", 1).to_list(200)
+        return [{"id": x["_id"], "name": x["name"], "url": x["url"],
+                 "image_path": x.get("image_path"), "active": x.get("active", True),
+                 "order": x.get("order", 0), "created_at": x.get("created_at")} for x in docs]
+
+    @r.post("/important-links")
+    async def important_links_create(request: Request, name: str = Form(...), url: str = Form(...),
+                                     active: bool = Form(True), image: UploadFile = File(None),
+                                     au: dict = Depends(require("settings", write=True))):
+        if not name.strip() or not url.strip():
+            raise HTTPException(400, "Name and URL are required")
+        image_path = None
+        if image and image.filename:
+            if image.content_type not in ALLOWED_IMG_TYPES:
+                raise HTTPException(400, f"Image type not allowed. Use: JPG, PNG, GIF, WebP, SVG")
+            data = await image.read()
+            if len(data) > MAX_IMG_SIZE:
+                raise HTTPException(400, "Image must be under 5 MB")
+            image_path = upload_image(data, image.filename, image.content_type)
+        last = await db.important_links.find({}).sort("order", -1).to_list(1)
+        next_order = (last[0]["order"] + 1) if last else 0
+        doc_id = secrets.token_hex(8)
+        await db.important_links.insert_one({
+            "_id": doc_id, "name": name.strip(), "url": url.strip(),
+            "image_path": image_path, "active": active, "order": next_order,
+            "created_at": d.iso(d.now_utc()),
+        })
+        await audit(au, "create_important_link", "settings", doc_id, {"name": name}, request)
+        return {"ok": True, "id": doc_id}
+
+    @r.put("/important-links/{link_id}")
+    async def important_links_update(link_id: str, request: Request,
+                                     name: str = Form(None), url: str = Form(None),
+                                     active: str = Form(None), image: UploadFile = File(None),
+                                     au: dict = Depends(require("settings", write=True))):
+        doc = await db.important_links.find_one({"_id": link_id})
+        if not doc:
+            raise HTTPException(404, "Link not found")
+        upd = {}
+        if name is not None:
+            upd["name"] = name.strip()
+        if url is not None:
+            upd["url"] = url.strip()
+        if active is not None:
+            upd["active"] = active.lower() in ("true", "1", "yes")
+        if image and image.filename:
+            if image.content_type not in ALLOWED_IMG_TYPES:
+                raise HTTPException(400, f"Image type not allowed. Use: JPG, PNG, GIF, WebP, SVG")
+            data = await image.read()
+            if len(data) > MAX_IMG_SIZE:
+                raise HTTPException(400, "Image must be under 5 MB")
+            upd["image_path"] = upload_image(data, image.filename, image.content_type)
+        if upd:
+            await db.important_links.update_one({"_id": link_id}, {"$set": upd})
+        await audit(au, "update_important_link", "settings", link_id, upd, request)
+        return {"ok": True}
+
+    @r.delete("/important-links/{link_id}")
+    async def important_links_delete(link_id: str, request: Request,
+                                     au: dict = Depends(require("settings", write=True))):
+        res = await db.important_links.delete_one({"_id": link_id})
+        if res.deleted_count == 0:
+            raise HTTPException(404, "Link not found")
+        await audit(au, "delete_important_link", "settings", link_id, {}, request)
+        return {"ok": True}
+
+    @r.put("/important-links-reorder")
+    async def important_links_reorder(payload: dict, request: Request,
+                                      au: dict = Depends(require("settings", write=True))):
+        ids = payload.get("ids", [])
+        if not isinstance(ids, list):
+            raise HTTPException(400, "ids must be a list")
+        for i, lid in enumerate(ids):
+            await db.important_links.update_one({"_id": lid}, {"$set": {"order": i}})
+        await audit(au, "reorder_important_links", "settings", None, {"count": len(ids)}, request)
         return {"ok": True}
 
     return r
