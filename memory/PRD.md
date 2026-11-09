@@ -1,136 +1,42 @@
 # MerqON — Product Requirements Document
 
-## Problem Statement
-A Web3 membership + token-utility platform on BNB Smart Chain (token: MERQ, BEP-20) with
-MLM/network mechanics implemented transparently with configurable rules (no hard-coded
-guaranteed-return promises). Branding: MerqON — "Build for everyone".
+## Original Problem Statement
+Build "MerqON" as a Web3 membership + token utility platform. Features include a decentralized MLM/network mechanic, configurable profit growth, rewards, and autopools.
 
-## User Choices
-- Branding: MerqON (token MERQ)
-- Scope v1: Full DApp + FastAPI + MongoDB, mechanics simulated off-chain (configurable rules, DB ledger)
-- Auth: REAL MetaMask/WalletConnect nonce-signature login + JWT
-- Price: admin-configurable MERQ price + live CoinGecko BNB reference
-- Admin panel: yes
-- Theme: premium, international DeFi aesthetic (dark obsidian + BNB gold + emerald)
+## Core Stack
+- **Frontend**: React (CRA + craco), Tailwind CSS, ethers.js, Tanstack Query
+- **Backend**: FastAPI, PyJWT, eth-account, Web3.py, Motor (async MongoDB)
+- **Database**: MongoDB Atlas (production), local MongoDB (dev)
+- **Auth**: Wallet-only (MetaMask/WalletConnect), no email/passwords
 
-## Architecture
-- Frontend: React (CRA/craco), ethers v6 for wallet connect/signing, react-query, Tailwind, shadcn/ui, recharts, sonner, lucide
-- Backend: FastAPI, eth-account for EIP-191 signature recovery, PyJWT (HS256, 7d)
-- DB: MongoDB (members, nonces, settings, transactions, positions, autopool)
-- Auth: /api/auth/nonce -> sign -> /api/auth/verify -> JWT. Admin by seeded address.
+## What's Been Implemented
+- Full DApp with wallet login, dashboard, network, board trees
+- TechPass, Entry/Unity Port purchase flows
+- Momentum Booster (MB1-8) matrix networks
+- Global Momentum (GM) company-wide matrix tree
+- Income engine with USDT-based internal accounting
+- Withdrawal system converting USDT → MERQ at live rates minus 5% fee
+- Treasury on-chain payout via BSC
+- Comprehensive Admin Panel with RBAC, audit logs, member management
+- Admin "View As" impersonation
+- Port income daily accrual cron
+- Marketing landing page
+- **Important Links**: Admin CRUD with image upload (Emergent Object Storage) + Member showcase page (NEW)
+- **Withdrawal safety**: Pre-flight treasury check blocks withdrawals instantly if MERQ/BNB is low; generic "Withdrawal Failed !!!" error shown to members (NEW)
 
-## Personas
-- Member: connects wallet, deposits MERQ, builds referral/binary network, earns & withdraws.
-- Admin: configures protocol rules, monitors analytics, manages member status.
+## Key Collections
+- `members`: User profiles, income tracking, network stats
+- `matrix`: MLM tree nodes (MB1-8, GM boards)
+- `transactions`: Immutable ledger
+- `withdrawals`: Withdrawal requests with status tracking
+- `techpass`, `port_purchases`: Purchase records
+- `important_links`: Admin-managed links with image paths (NEW)
 
-## Implemented (2026-06)
-- Wallet-signature auth (MetaMask + in-app Demo Member/Admin wallets), auto-register w/ sponsor + binary placement
-- Member dashboard: MERQ balance, fiat value, wallet balance, 5 income stream cards, network overview
-- Dual network trees: sponsor (referral) + binary placement; left/right counts & volume; directs table
-- Income engine: Referral %, Profit Growth (daily accrual + claim), PG Commission, Achievement Rewards, Autopool matrix
-- Deposit (approve + deposit two-step), Withdraw (fees, min, daily limit, cooldown, validations)
-- Transactions + income history with BscScan links; CoinGecko BNB price
-- Admin panel: configurable rules (referral/growth/pool/fees/limits/price), member status, analytics, income distribution
-- Premium dark/gold theme, responsive, data-testids throughout
-- Admin seed: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (network root)
-- Testing: 30/30 backend pytest PASS, frontend e2e PASS (iteration_1.json)
+## Pending / In Progress
+- P0: Apply new MB/GM business rules to live `income_engine.py` (2-direct requirement, $4.8387 savings deduction, 62-spot completion, 10% GM deduction) — simulation script done, needs transposition to production code
 
-## Backlog / Next (P1/P2)
-- Real Solidity contracts (NFO/Membership/Referral/Growth/Commission/Reward/AutoPool/Treasury) + BSC deploy + multisig (P1)
-- On-chain sponsor recording + MongoDB indexed mirror (P1)
-- WalletConnect v2 (Reown) full integration for mobile (P2)
-- Split server.py by domain; async httpx for CoinGecko; settings key validation; nonce rate-limiting (P2)
-- Rank progression rewards, PG commission multi-level, autopool re-entry depth visualization (P2)
-
-## Notes / Mocked
-- MOCKED: on-chain layer is simulated off-chain in MongoDB; tx hashes are placeholders (BscScan-format links); token deposits/transfers are simulated, not real BEP-20 transfers.
-
-## Admin Panel (2026-06, separate /admin shell)
-- Separate secure console at /admin with wallet-signature login + RBAC (6 roles: SUPER_ADMIN, FINANCE_ADMIN, MLM_ADMIN, OPERATIONS_ADMIN, SUPPORT_ADMIN, VIEW_ONLY) and immutable audit logging.
-- Super Admin seeded: admin@merqon.io bound to wallet 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 (Demo Super Admin Wallet button).
-- Modules (full depth): Dashboard (KPIs+charts), Members + Member Detail (actions/notes), MLM Network (sponsor/placement trees), Leaderboard, Rank Management, Deposits, Withdrawals (approval queue w/ auto-approve threshold), Income (ranged), Reconciliation, Profit Growth, Commission, Rewards (editable tiers), Autopool, Token & Blockchain, Treasury, Liquidity, Business Rules (versioned), Reports (+CSV export), Notifications, Support tickets, Admin Users & Roles (RBAC matrix), Audit Logs, System Health, System Settings, Emergency Center (gated controls).
-- Withdrawal flow changed: requests above withdraw_auto_approve_under become pending (admin approve/reject); small ones auto-complete.
-- Token/Treasury/Liquidity/Reconciliation are SIMULATED monitoring (no live BSC in v1).
-- Backend: /app/backend/admin_panel.py (build_admin_router + RBAC + audit). Frontend: /app/frontend/src/admin/*.
-- Testing: 47/47 admin backend tests PASS + full admin frontend e2e PASS (iteration_2.json). Member DApp regression green.
-
-## Marketing Landing Page (2026, from company profile)
-- Premium black + luxury-gold marketing site at "/" built from the MerqON company profile (Build to Connect).
-- Generated brand assets: MerqON logo emblem + gold globe hero (hosted URLs in MarketingLanding.jsx).
-- Sections: Hero (Building a Connected Digital Ecosystem), 4 pillars (AI Solutions, Algorithmic Trading, Digital Utility, Tokenomics), Introducing MerqON AI + 3 core segments + mission, AI Platform (6 capabilities), Algorithmic Trading Infrastructure (5 components + risk note), MERQ Tokenomics, Future Utility Roadmap (4 phases + vision), CTA + footer with disclaimers.
-- Routing change: "/" = MarketingLanding; DApp wallet-connect moved to "/app" (and "/register?ref="); Protected redirects to "/app". "Launch App" CTAs link to /app.
-- File: /app/frontend/src/pages/MarketingLanding.jsx. Static content, no backend dependency.
-
-## 2026-06 Update
-- Owner wallet 0xc1aCA21ABDfdBF0730e73B56fe949cD2703e63ad whitelisted as SUPER_ADMIN via OWNER_ADMIN_WALLETS env (startup seed: admin_users, settings.admin_addresses, members.is_admin).
-- Removed all demo wallet logins (member + admin UI). Public Hardhat demo key's admin access revoked; remains network root only. Legacy admin_member now also requires an active admin_users entry.
-- Signup now requires a registered sponsor (wallet address or pasted referral link, auto-extracted & live-validated via GET /api/auth/lookup/{address}). Existing members log in without sponsor; admin wallets exempt. /register?ref= prefills sponsor.
-- Landing page: Live algo chart (BNB/USDT via Binance data-api, MA7/MA25 crossover sample signals), live market volume (6 pairs), MerqAI revenue structure (SAMPLE %), MERQ token allocation donut (SAMPLE 1B supply). Endpoints: GET /api/market/klines, /api/market/volume. Sample numbers live in components/landing/RevenueStructure.jsx & TokenAllocation.jsx.
-- Member Swap page (/swap): REAL on-chain USDT<->MERQ via PancakeSwap V2 (ethers, MetaMask). Flow: fee transfer to fee wallet -> approve -> swapExactTokensForTokensSupportingFeeOnTransferTokens. States: not_live (no MERQ address), no_pool, disabled, ready. Backend: GET /api/swap/config, POST /api/swap/record (checks receipt via BSC RPC), GET /api/swap/history; Admin GET/PUT /api/admin/swap (module token) at /admin/swap — MERQ contract, fee wallet, fee % (default 0.1), slippage, router/factory/USDT/RPC. Verified quotes against real CAKE/USDT pool. Not done: sidebar MERQ price still admin-set, not pool price.
-- Member income restructured: old Income/Autopool/Rewards pages removed from member app. New grouped menu + dashboard: Merq TechPass (Partner Onboarding, Momentum Booster, Global Momentum) and Merq Entry & Unity Port (Partner Onboarding Rewards, Level Income, Rank & Rewards). Pages /income/:slug. APIs GET /api/income/streams, /api/income/stream/{key} (keys tp_*, port_*). Earning RULES PENDING from user — all show 0. Old backend income engine still exists.
-- Merq TechPass ($120, once per member): backend/techpass.py. Live price = PancakeSwap pool (raw eth_call), fallback admin merq_price_usd. Quote locked 10 min -> member pays real MERQ transfer via MetaMask to techpass.receive_wallet -> /api/techpass/confirm verifies receipt Transfer log on-chain (from member, to receiver, >= amount). Pending >30min -> expired. Member: /techpass page (shown after signup via ?welcome=1, skippable), dashboard card, nav item. Admin: /admin/techpass (TechPass Sales) KPIs, settings (receive wallet, price, on/off), filter, CSV export. Uses swap.merq_token_address as MERQ contract.
-- Merq Entry Port & Unity Port (backend/ports.py): member enters USDT amount (admin min/max per port, default 10-10000), live MERQ estimate, lock quote 10 min, pay real MERQ to TechPass receive wallet, on-chain verify. Multiple purchases, independent ports, require confirmed TechPass. Member: /ports/entry, /ports/unity, nav items, dashboard PortsCard. Admin: /admin/ports (tabs, KPIs, min/max/on-off, filters, CSV). APIs: GET /api/ports/status, POST /api/ports/{port}/quote|confirm; admin GET /api/admin/ports/{port}, /export, PUT /config. Collections port_purchases, port_quotes.
-- Dashboard Total MERQ Balance now LIVE from connected wallet (on-chain balanceOf via useLiveMerq hook + GET /api/ports/price for pool/admin price). Removed 'Wallet (available to deposit)' line. Shows 'MERQ not live yet' until contract set.
-- Old Wallet page (deposit/withdraw) removed; replaced by withdraw-only page /withdraw (menu 'Withdraw'). Dashboard balance boxes & deposit/withdraw buttons removed.
-- REAL withdrawals (backend/payout.py): member withdraws available earnings; <= withdraw_auto_approve_under (default 1000, admin-editable) sends MERQ on-chain automatically from treasury wallet (TREASURY_PRIVATE_KEY in backend .env, via secrets card); larger -> pending admin approval -> approve sends on-chain. Statuses pending/under_review/approved/processing/sent/completed/payout_failed/rejected. Admin retry for payout_failed, reject refunds available. Requires confirmed TechPass + MERQ contract set. Member /withdraw shows history w/ BscScan. Admin Withdrawals page has Treasury panel (address, MERQ & BNB balances, approval limit).
-- Dashboard shows live USDT balance (on-chain) with USDT logo.
-- TechPass income engine (backend/income_engine.py), runs once per confirmed TechPass (flag income_processed; startup backfill): Partner Onboarding (default 50% of price to direct sponsor); Momentum Booster MB1-MB8 = per-board binary matrix (2-wide, 5 levels) placed under nearest sponsor-upline in that board with BFS spillover (owner = root); entrant pays L1-L5 amounts to uplines; receiver paid net_profit first, then saves upgrade_save, then auto-enters next board (savings minus next board level total -> LP/treasury logged); Global Momentum = same sponsor-team binary, 20 levels x $1, receiver needs >=2 direct confirmed TechPass else skipped (income_events gm_skipped). Credited as MERQ at live price to members.available + income/income_usd. Collections matrix, mb_state, income_events. Admin /admin/income-rules (edit all amounts, totals, recent). Member income pages show USD, details, MB board progress. Sim test: backend/tests/engine_sim.py.
-- Board Trees page /trees (member): tabs MB1-MB8 + GM, binary rows w/ empty spots, direct vs spillover colors, drill into subtree (root restricted to own subtree). API GET /api/income/tree/{board}?root=.
-- Old incomes retired: /api/deposit, /growth/claim, /rewards/claim, /autopool/enter return 410. Admin pages Income, Profit Growth, Commission, Rewards, Autopool removed (nav + routes + files).
-
-
-## Update — Port incomes, admin & data copy
-- Port incomes live: Entry 0.30%/day; Unity 0.50/0.75/1%/day by amount, 12-month lock; 5% sponsor reward (Unity only); Level Income 25/15/10/5/4/3/2/1% of team daily earnings (needs $100 own port purchase); Rank M1–M7 one-time bonus = % x leg target (two strongest legs). Code: backend/port_income.py, hourly cron .emergent/crons.yml -> /api/cron/port-accrual
-- Principal withdrawal (Entry anytime, Unity after lock) credits USD value as MERQ at live price
-- Celebration banner for MB board upgrade / new rank (db.celebrations)
-- Admin: Income Reports (filters + CSV), Income Rules (under Settings), MERQ rate card (live pool rate, refresh, manual rate, live/fixed mode). Removed menus: Blockchain, Rank Mgmt, Reconciliation, Deposits, Business Rules
-- Swap now BNB <-> MERQ (PancakeSwap V2, WBNB path). Price reads MERQ/USDT pool, else MERQ/BNB x BNB/USDT
-- Referral links use https://merqonai.io; member Transactions menu removed
-- All data copied to user's Atlas (EXTERNAL_MONGO_URL, db merqon_database, 539 docs). App still runs on local MONGO_URL
-- BLOCKED: TREASURY_PRIVATE_KEY invalid (40 chars), so on-chain withdrawals are off
-- Backlog: smart contracts, chain monitoring/reconciliation, full UI test run of new screens
-
-## Update — Wallets & Contracts admin page
-- /admin/wallets (System menu): MERQ/USDT/WBNB contracts, Pancake factory/router, RPC, TechPass / Entry Port / Unity Port receive wallets (Entry/Unity blank = TechPass wallet), swap fee wallet + fee% + slippage; one atomic PUT /api/admin/wallets with validation
-- Treasury panel: key status, derived address, MERQ/BNB balances. Private key stays in server secrets (never in DB/UI)
-- Only active admin: 0xc1aca21abdfdbf0730e73b56fe949cd2703e63ad (test admins disabled)
-
-## Update — Database moved to Atlas & reset
-- App (preview + live) now uses EXTERNAL_MONGO_URL + EXTERNAL_DB_NAME=merqon_database (Atlas); falls back to MONGO_URL/DB_NAME if unset
-- Atlas wiped: kept settings (wallets/contracts, income rules), rule_versions, owner admin. Only member: 0x625a2351446c78b664236747899ba49561a35944 (root sponsor, zero balances)
-- Startup no longer seeds demo root member 0xf39f… or sample tickets; admin network root = oldest non-admin member with no sponsor
-- Admin wallets excluded from admin Members list and Dashboard member KPIs
-- Old built-in DB left untouched as a backup (not used by the app)
-
-## Update — Logo, 2nd admin, TechPass activation
-- New gold M logo: /frontend/public/merqon-mark.png (square), merqon-logo.png (wide), favicon-192.png; BrandLogo + MarketingLanding use it
-- Admins (Atlas): 0xc1aca21abdfdbf0730e73b56fe949cd2703e63ad (env-seeded) + 0x25549df8b08d02740beb4004bb43f5de88b1626f (DB only)
-- Confirmed TechPass sets member status=active (process_techpass + startup backfill)
-
-## Update — MERQ coin & supply
-- MERQ coin image /merq-token.webp (+ merq-token-256.png for MetaMask). MerqCoin component used on dashboard balance and swap MERQ chip; hover spin/glow (.merq-coin-hover)
-- "Add MERQ to MetaMask" (wallet_watchAsset, reads /api/swap/config) in landing Tokenomics card
-- Token allocation total supply = 10,000,000 MERQ (10M)
-
-## Update — USDT incomes, MERQ withdrawals, USDT swap
-- All incomes credited in USDT (members.available, income.{key}, transactions.amount = USD; meta.currency USDT). Port principal return also USDT
-- Withdraw: member enters USDT; 5% fee (withdraw_fee_pct) in USDT; net converted to MERQ at live rate locked at request (withdrawals.merq_price, net=MERQ, fee_merq). Payout sends net MERQ to member + fee_merq MERQ to Swap Fee Receive Wallet (fee_tx_hash). Limits/min/auto-approve read as USDT. protocol fee no longer applied
-- Member swap reverted to USDT <-> MERQ (PancakeSwap V2)
-
-## Update — TechPass rule fixes
-- Partner Onboarding = fixed $ (income_rules.partner_onboarding_usd, default 50) to the direct sponsor, always (spillover too). MB placement parents get only MB level amounts (prod MB1 L1 = 0)
-- Global Momentum = one company tree; member enters only when they have a confirmed TechPass AND >= gm_min_directs (2) active directs; each entry pays $gm_amount_per_level to up to gm_levels (20) GM uplines. One-time rebuild done (settings.gm_v2_rebuilt)
-- Placement claims (db.placement_claims) + serialized TechPass processing (asyncio.Lock) prevent double placement/payout races
-- Admin Income Rules: Recent TechPass Income panel removed
-- Note: past 9 Partner Onboarding payouts were $60 (pre-fix) and 4 x $1 GM v1 payouts — not reversed
-- Secrets (EXTERNAL_MONGO_URL, TREASURY_PRIVATE_KEY) are injected into process env, not present in backend/.env
-
-## Update — Corrections, 1 AM IST port run, GM banner
-- One-time correction applied on Atlas (tests/correction_po_mb1.py; backup in db.corrections_backup _id po_mb1_2026_11): 9 PO $60 tx -> $50 (-$10 each), 9 MB1 L1 $50 tx deleted (-$50 each), mb_state MB1 net reduced. Total $540 taken back from 7 members
-- Port daily earnings now credited once per day at 1 AM IST (cron "0 1 * * *" Asia/Kolkata; port_income.payout_days counts 1AM-IST boundaries)
-- GM entry celebration banner (celebrations kind gm_entry); banners created for 0x12627aab and 0xeaf52b04
-- GM reset (tests/correction_gm_reset.py, backup corrections_backup gm_reset_2026_11): 4 x $1 GM tx deleted, $2 taken back from 0x12627aab and 0xeaf52b04, GM tree cleared and rebuilt with qualified members only (no payouts)
-
-## Update — Port payout catch-up & GM tree viewer
-- Port payouts: catch-up safety net port_maybe_accrue() (max once/15 min) on /api/ports/status and /api/member/dashboard; only pays 1AM-IST days already due. Port history shows next_payout_at (IST)
-- Admin "Global Momentum Tree" page (/admin/gm-tree, GET /api/admin/gm-tree?root=): whole company tree, search/focus wallet, joins per IST day
+## Upcoming / Future
+- P1: Smart Contracts deployment (NFO.sol, Membership.sol)
+- P1: Blockchain transaction monitoring and reconciliation workers
+- P2: Link categories for Important Links
+- P2: Treasury low-balance admin alerts

@@ -827,7 +827,7 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
             hrs = settings["withdraw_cooldown_hours"] - delta.total_seconds() / 3600.0
             raise HTTPException(400, f"Cooldown active. Try again in {hrs:.1f}h")
     q = await withdraw_calc(amt, settings)
-    # --- Pre-flight treasury check: reject instantly if MERQ or BNB is low ---
+    # --- Pre-flight treasury check: reject instantly if funds are low ---
     auto = amt <= float(settings.get("withdraw_auto_approve_under", 5000))
     if auto:
         swap = await get_swap_config()
@@ -836,14 +836,16 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
             ts = await _aio.to_thread(treasury_status, swap)
             need_merq = q["merq_receive"] + q["merq_fee"]
             if ts.get("merq_balance") is not None and ts["merq_balance"] < need_merq:
-                raise HTTPException(400, "Withdrawal temporarily unavailable — treasury MERQ balance is low. Please try again later.")
+                logger.warning(f"Withdrawal blocked: low MERQ ({ts['merq_balance']:.4f} < {need_merq:.4f})")
+                raise HTTPException(400, "Withdrawal Failed !!!")
             if ts.get("bnb_balance") is not None and ts["bnb_balance"] < 0.002:
-                raise HTTPException(400, "Withdrawal temporarily unavailable — treasury needs BNB for gas. Please try again later.")
+                logger.warning(f"Withdrawal blocked: low BNB ({ts['bnb_balance']:.6f})")
+                raise HTTPException(400, "Withdrawal Failed !!!")
         except HTTPException:
             raise
         except Exception as e:
             logger.warning(f"Treasury pre-check failed: {e}")
-            raise HTTPException(400, "Withdrawal temporarily unavailable — unable to verify treasury. Please try again later.")
+            raise HTTPException(400, "Withdrawal Failed !!!")
     res = await db.members.update_one({"_id": m["_id"], "available": {"$gte": amt}}, {
         "$inc": {"available": -amt},
         "$set": {"last_withdraw_at": iso(now_utc()), "withdrawn_today": used + amt, "withdrawn_today_date": today},
@@ -872,7 +874,7 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
             })
             await db.transactions.update_one({"meta.request_id": wid}, {"$set": {"status": "failed"}})
             await db.withdrawals.update_one({"_id": wid}, {"$set": {"status": "failed"}})
-            raise HTTPException(400, wdoc.get("reason") or "Withdrawal failed — your balance has been restored. Please try again later.")
+            raise HTTPException(400, "Withdrawal Failed !!!")
     msg = {"sent": "MERQ sent to your wallet — confirming on-chain",
            "pending": "Withdrawal requested — waiting for admin approval",
            "payout_failed": "Withdrawal is queued — the team will complete the transfer shortly"}.get(wdoc["status"], "Withdrawal requested")
