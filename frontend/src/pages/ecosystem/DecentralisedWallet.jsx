@@ -235,10 +235,6 @@ export default function DecentralisedWallet() {
             </div>
           ))}
         </div>
-        <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/5 p-4 flex items-start gap-3">
-          <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
-          <p className="text-[11px] text-amber-200/70 leading-relaxed">Self-custody also means users are responsible for their recovery phrase and transaction approvals. If the recovery phrase is lost and no backup exists, access to the wallet may be permanently lost.</p>
-        </div>
       </div>
 
       {/* ─── ECOSYSTEM STRATEGY ─── */}

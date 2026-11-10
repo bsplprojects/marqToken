@@ -335,21 +335,6 @@ export default function TokenInsights() {
             </div>
           ))}
         </div>
-        <div className="rounded-xl border border-rose-400/20 bg-rose-400/5 p-5">
-          <h4 className="text-rose-300 font-semibold text-sm mb-3 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Important Risk Considerations</h4>
-          <ul className="space-y-2">
-            {[
-              "Digital asset prices can fluctuate significantly, and users may lose some or all of the value they assign to their tokens.",
-              "Token allocation does not guarantee token value, liquidity or future demand.",
-              "Future utility depends on actual product development, adoption and implementation.",
-              "Exchange availability, market depth and liquidity are not guaranteed.",
-              "Smart contract vulnerabilities, network outages, wallet compromise and user error may result in loss.",
-              "No guaranteed profit, fixed return or investment appreciation is promised.",
-            ].map((r, i) => (
-              <li key={i} className="flex items-start gap-2"><CircleDot className="h-3 w-3 text-rose-400/60 mt-1 flex-shrink-0" /><span className="text-slate-400 text-xs leading-relaxed">{r}</span></li>
-            ))}
-          </ul>
-        </div>
       </div>
 
       {/* ─── CONCLUSION ─── */}

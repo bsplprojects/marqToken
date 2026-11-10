@@ -308,19 +308,6 @@ export default function MerqonPay() {
           </div>
         </div>
       </div>
-
-      {/* ─── DISCLAIMER ─── */}
-      <div className="rounded-2xl border border-slate-700/50 bg-slate-900/50 p-6 mb-8">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-slate-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <h3 className="text-slate-300 font-semibold text-sm mb-2">Important Notice</h3>
-            <p className="text-slate-500 text-xs leading-relaxed">
-              This document describes MerqON Pay as a proposed product concept. Card issuance, availability, supported assets, payment acceptance, conversion, fees and features are subject to agreements with authorised issuers and service providers, regulatory approvals and country-specific restrictions. A crypto-linked card may not support every merchant, country, digital asset or transaction type. Digital assets are volatile and may involve loss. This document is for general informational purposes only and does not constitute legal, financial or investment advice.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

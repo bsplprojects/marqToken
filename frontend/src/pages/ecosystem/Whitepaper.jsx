@@ -392,14 +392,6 @@ export default function Whitepaper() {
       {/* ─── 10 RISKS ─── */}
       <div className="glass rounded-2xl border border-white/8 p-6 sm:p-8 mb-8">
         <S icon={Shield} id="risks">10 | Security, Risks & User Responsibilities</S>
-        <div className="rounded-xl border border-rose-400/20 bg-rose-400/5 p-5 mb-5">
-          <h4 className="text-rose-300 font-semibold text-sm mb-3 flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Important Risk Considerations</h4>
-          <ul className="space-y-2">
-            {RISKS.map((r, i) => (
-              <li key={i} className="flex items-start gap-2"><CircleDot className="h-3 w-3 text-rose-400/60 mt-1 flex-shrink-0" /><span className="text-slate-400 text-xs leading-relaxed">{r}</span></li>
-            ))}
-          </ul>
-        </div>
         <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
           <h4 className="text-white font-semibold text-sm mb-2">Wallet Safety</h4>
           <p className="text-slate-400 text-xs leading-relaxed">Users should protect wallet credentials and recovery phrases, verify addresses before transactions, and rely on official project channels for verified contract and network information.</p>
