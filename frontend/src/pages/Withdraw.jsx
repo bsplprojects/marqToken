@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { fmt } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { WithdrawHistory } from "@/components/WithdrawHistory";
+import { AiDeductions } from "@/components/AiDeductions";
 import { toast } from "sonner";
 import {
   ArrowUpFromLine, CheckCircle2, Loader2, ShieldCheck,
@@ -109,6 +110,7 @@ export default function Withdraw() {
         </div>
       </div>
       <div className="mt-6"><WithdrawHistory /></div>
+      <div className="mt-6"><AiDeductions /></div>
     </div>
   );
 }

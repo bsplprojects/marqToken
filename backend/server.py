@@ -895,6 +895,26 @@ async def withdraw_history(m: dict = Depends(current_member)):
     return out
 
 
+@api.get("/withdraw/ai-deductions")
+async def ai_subscription_deductions(m: dict = Depends(current_member)):
+    """Return MERQAi subscription deductions for this member from the shared DB."""
+    addr = m["_id"]
+    docs = await db.ai_wallet_balance_ledger.find(
+        {"address": addr, "type": "debit"}
+    ).sort("created_at", -1).to_list(100)
+    return [
+        {
+            "id": d["_id"],
+            "amount_usd": round(abs(d["amount_cents"]) / 100, 2),
+            "reason": d.get("reason", "MERQAi Subscription"),
+            "balance_after_usd": round(d.get("balance_after_cents", 0) / 100, 2),
+            "created_at": d.get("created_at"),
+            "ref": d.get("ref"),
+        }
+        for d in docs
+    ]
+
+
 # ----------------------------- price -----------------------------
 _price_cache = {"ts": 0, "bnb": None}
 
