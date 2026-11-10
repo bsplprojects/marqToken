@@ -15,6 +15,7 @@ import {
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, tid: "nav-dashboard" },
+  { ecosystem: true },
   { to: "/techpass", label: "Merq TechPass", icon: Ticket, tid: "nav-techpass" },
   { to: "/trees", label: "Board Trees", icon: GitFork, tid: "nav-trees" },
   { to: "/ports/entry", label: "Entry Port", icon: DoorOpen, tid: "nav-port-entry" },
@@ -23,7 +24,6 @@ const NAV = [
   { income: true },
   { to: "/withdraw", label: "Withdraw", icon: ArrowUpFromLine, tid: "nav-withdraw" },
   { to: "/swap", label: "Swap", icon: ArrowLeftRight, tid: "nav-swap" },
-  { ecosystem: true },
   { to: "/links", label: "Important Links", icon: Link2, tid: "nav-links" },
   { to: "/profile", label: "My Profile", icon: User, tid: "nav-profile" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, tid: "nav-settings" },
