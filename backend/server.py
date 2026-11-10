@@ -55,7 +55,7 @@ DEFAULT_SETTINGS = {
     "profit_growth_term_days": 300,
     "pg_commission_pct": 2.0,
     "pg_commission_min_directs": 2,
-    "min_withdraw": 10.0,
+    "min_withdraw": 1.0,
     "withdraw_fee_pct": 5.0,
     "protocol_fee_pct": 1.0,
     "daily_withdraw_limit": 5000.0,

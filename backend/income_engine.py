@@ -195,7 +195,18 @@ def build_income_engine(d):
         m = await db.members.find_one({"_id": addr})
         sp = m.get("sponsor")
         if sp:
-            await credit(sp, "tp_partner_onboarding", float(r["partner_onboarding_usd"]), {"from": addr}, price)
+            po_usd = float(r["partner_onboarding_usd"])
+            save = min(po_usd, float(r["mb_save_per_payout"]))
+            pay = po_usd - save
+            await credit(sp, "tp_partner_onboarding", pay, {"from": addr, "saved": save}, price)
+            # Add savings to MB1 upgrade savings and net to MB1 net profit
+            sid = "MB1:" + sp
+            st = await db.mb_state.find_one({"_id": sid})
+            if not st:
+                st = {"_id": sid, "member": sp, "board": 1, "net": 0.0, "saved": 0.0, "upgraded": False, "filled": 0}
+            st["saved"] = st.get("saved", 0.0) + save
+            st["net"] = st.get("net", 0.0) + pay
+            await db.mb_state.replace_one({"_id": sid}, st, upsert=True)
         await mb_enter(addr, 0, r, price)
         await gm_check(addr, r, price)
         if sp:
