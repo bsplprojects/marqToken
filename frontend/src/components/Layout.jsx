@@ -5,6 +5,7 @@ import { shortAddr } from "@/lib/format";
 import { toast } from "sonner";
 import BrandLogo from "@/components/BrandLogo";
 import { IncomeNav } from "@/components/IncomeNav";
+import { EcosystemNav } from "@/components/EcosystemNav";
 import { CelebrationBanner } from "@/components/CelebrationBanner";
 import {
   LayoutDashboard, Network as NetworkIcon,
@@ -22,6 +23,7 @@ const NAV = [
   { income: true },
   { to: "/withdraw", label: "Withdraw", icon: ArrowUpFromLine, tid: "nav-withdraw" },
   { to: "/swap", label: "Swap", icon: ArrowLeftRight, tid: "nav-swap" },
+  { ecosystem: true },
   { to: "/links", label: "Important Links", icon: Link2, tid: "nav-links" },
   { to: "/profile", label: "My Profile", icon: User, tid: "nav-profile" },
   { to: "/settings", label: "Settings", icon: SettingsIcon, tid: "nav-settings" },
@@ -53,6 +55,7 @@ export default function Layout({ children }) {
       <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
         {nav.map((item) => {
           if (item.income) return <IncomeNav key="income" onNavigate={() => setOpen(false)} />;
+          if (item.ecosystem) return <EcosystemNav key="ecosystem" onNavigate={() => setOpen(false)} />;
           const active = location.pathname === item.to;
           const Icon = item.icon;
           return (

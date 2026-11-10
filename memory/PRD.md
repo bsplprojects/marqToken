@@ -15,33 +15,35 @@ Build "MerqON" as a Web3 membership + token utility platform. Features include a
 - Momentum Booster (MB1-8) matrix networks
 - Global Momentum (GM) company-wide matrix tree
 - Income engine with USDT-based internal accounting
-- **Partner Onboarding**: $4.8387 deducted per payout, added to MB1 Upgrade Savings; net amount adds to MB1 Net Profit
+- Partner Onboarding: $4.8387 deducted, added to MB1 Upgrade Savings & Net Profit
 - MB payouts: $4.8387 savings deduction, 2-direct minimum, 62-spot completion gate
 - GM payouts: 10% deduction applied
-- Withdrawal system: USDT → MERQ at live rates, 5% fee, **minimum $1**
-- **Withdrawal safety**: Pre-flight treasury check (MERQ & BNB); generic "Withdrawal Failed !!!" error; auto-refund on payout failure
+- Withdrawal: USDT → MERQ at live rates, 5% fee, **minimum $1**, pre-flight treasury check, generic "Withdrawal Failed !!!" error
 - Treasury on-chain payout via BSC
 - Comprehensive Admin Panel with RBAC, audit logs, member management
 - Admin "View As" impersonation
 - Port income daily accrual cron
 - Marketing landing page
 - **Important Links**: Admin CRUD with image upload (Emergent Object Storage) + Member showcase page
+- **MerqON Ecosystem menu** (expandable sidebar with 7 sub-pages):
+  - MerqON AI
+  - Token Insights
+  - AI Trade Engine (Algo)
+  - Decentralised Wallet
+  - MerqON Pay (Crypto Card)
+  - Whitepaper
+  - Refer & Earn (with working referral link copy)
+- All ecosystem pages have "Coming Soon" placeholder layouts ready for content
 
 ## Key Collections
-- `members`: User profiles, income tracking, network stats
-- `matrix`: MLM tree nodes (MB1-8, GM boards)
-- `mb_state`: Per-member per-board net profit, savings, filled spots, upgrade status
-- `transactions`: Immutable ledger
-- `withdrawals`: Withdrawal requests with status tracking
-- `techpass`, `port_purchases`: Purchase records
-- `important_links`: Admin-managed links with image paths
+- `members`, `matrix`, `mb_state`, `transactions`, `withdrawals`, `techpass`, `port_purchases`, `important_links`
 
 ## Pending / In Progress
-- P0: Full MB/GM algorithm transposition from simulation to live income_engine.py (partially done — partner onboarding savings now live)
+- P0: Full MB/GM algorithm transposition from simulation to live income_engine.py
 
 ## Upcoming / Future
 - P1: Smart Contracts deployment (NFO.sol, Membership.sol)
 - P1: Blockchain transaction monitoring and reconciliation workers
+- P2: Ecosystem page content (user will provide matter)
 - P2: Link categories for Important Links
 - P2: Treasury low-balance admin alerts
-- P2: Income breakdown showing savings deduction on member dashboard

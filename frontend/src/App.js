@@ -17,6 +17,13 @@ import BoardTrees from "@/pages/BoardTrees";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import ImportantLinks from "@/pages/ImportantLinks";
+import MerqonAI from "@/pages/ecosystem/MerqonAI";
+import TokenInsights from "@/pages/ecosystem/TokenInsights";
+import AITradeEngine from "@/pages/ecosystem/AITradeEngine";
+import DecentralisedWallet from "@/pages/ecosystem/DecentralisedWallet";
+import MerqonPay from "@/pages/ecosystem/MerqonPay";
+import Whitepaper from "@/pages/ecosystem/Whitepaper";
+import ReferAndEarn from "@/pages/ecosystem/ReferAndEarn";
 import AdminApp from "@/admin/AdminApp";
 import MarketingLanding from "@/pages/MarketingLanding";
 import ViewAs, { ViewAsBanner } from "@/pages/ViewAs";
@@ -61,6 +68,13 @@ function App() {
             <Route path="/withdraw" element={<Protected><Withdraw /></Protected>} />
             <Route path="/swap" element={<Protected><Swap /></Protected>} />
             <Route path="/links" element={<Protected><ImportantLinks /></Protected>} />
+            <Route path="/ecosystem/merqon-ai" element={<Protected><MerqonAI /></Protected>} />
+            <Route path="/ecosystem/token-insights" element={<Protected><TokenInsights /></Protected>} />
+            <Route path="/ecosystem/ai-trade-engine" element={<Protected><AITradeEngine /></Protected>} />
+            <Route path="/ecosystem/decentralised-wallet" element={<Protected><DecentralisedWallet /></Protected>} />
+            <Route path="/ecosystem/merqon-pay" element={<Protected><MerqonPay /></Protected>} />
+            <Route path="/ecosystem/whitepaper" element={<Protected><Whitepaper /></Protected>} />
+            <Route path="/ecosystem/refer-earn" element={<Protected><ReferAndEarn /></Protected>} />
             <Route path="/techpass" element={<Protected><TechPass /></Protected>} />
             <Route path="/ports/:port" element={<Protected><Port /></Protected>} />
             <Route path="/trees" element={<Protected><BoardTrees /></Protected>} />
