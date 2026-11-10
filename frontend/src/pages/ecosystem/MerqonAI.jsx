@@ -5,7 +5,7 @@ import {
   Zap, Clock, TrendingUp, DollarSign, Lightbulb, Search, Languages,
   Shield, Rocket, Target, CheckCircle2, ArrowRight, ChevronRight,
   Layers, Server, Eye, AudioLines, Activity, Building2, ShoppingCart,
-  Stethoscope, Factory, CreditCard, Settings,
+  Stethoscope, Factory, CreditCard, Settings, ExternalLink,
 } from "lucide-react";
 
 const HERO_IMG = "/images/merqon-ai-hero.jpg";
@@ -179,10 +179,19 @@ export default function MerqonAI() {
           <p className="text-slate-400 text-sm sm:text-base leading-relaxed max-w-xl mb-8">
             MerqON AI is an AI-powered digital assistant platform designed to make artificial intelligence accessible, practical and useful for individuals, professionals, entrepreneurs and organizations.
           </p>
-          <div className="flex flex-wrap gap-3">
-            {["Think Smarter", "Work Faster", "Create More"].map((t) => (
-              <span key={t} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white font-semibold">{t}</span>
-            ))}
+          <div className="flex flex-wrap items-center gap-4">
+            <a href="https://merqonai.com" target="_blank" rel="noopener noreferrer" data-testid="ask-merqai-btn"
+              className="group relative inline-flex items-center gap-3 rounded-2xl border border-amber-400/40 bg-gradient-to-r from-amber-400 to-amber-500 px-7 py-3.5 text-sm font-bold text-slate-950 shadow-[0_0_30px_rgba(251,191,36,0.25)] hover:shadow-[0_0_50px_rgba(251,191,36,0.4)] transition-all duration-500 hover:scale-[1.03]">
+              <span className="absolute inset-0 rounded-2xl bg-gradient-to-r from-amber-300 to-amber-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <MessageSquare className="relative h-5 w-5" />
+              <span className="relative">Ask MerqON AI</span>
+              <ExternalLink className="relative h-4 w-4 opacity-60 group-hover:opacity-100 transition-opacity" />
+            </a>
+            <div className="flex flex-wrap gap-2">
+              {["Think Smarter", "Work Faster", "Create More"].map((t) => (
+                <span key={t} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-white font-semibold">{t}</span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
