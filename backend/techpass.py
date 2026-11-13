@@ -45,6 +45,26 @@ def _pair_price(url, factory, base, quote):
 
 
 WBNB = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+_dex_cache = {"ts": 0, "price": None}
+
+
+def _dexscreener_price(token_address):
+    """Fetch live price from DexScreener API (free, no key needed)."""
+    import time
+    if time.time() - _dex_cache["ts"] < 30 and _dex_cache["price"]:
+        return _dex_cache["price"]
+    try:
+        r = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{token_address}", timeout=8)
+        if r.ok:
+            pairs = r.json().get("pairs", [])
+            if pairs:
+                p = float(pairs[0].get("priceUsd", 0))
+                if p > 0:
+                    _dex_cache.update({"ts": time.time(), "price": p})
+                    return p
+    except Exception:
+        pass
+    return None
 
 
 def pool_price(swap: dict):
@@ -90,17 +110,31 @@ def build_techpass(d):
         return {**TECHPASS_DEFAULTS, **(s.get("techpass") or {})}
 
     async def live_price(swap, settings):
-        if swap.get("merq_token_address"):
+        merq_addr = swap.get("merq_token_address")
+        if merq_addr:
+            # 1. Try PancakeSwap pool (on-chain)
             try:
-                if settings.get("merq_price_mode") == "fixed":
-                    dec = int(await asyncio.to_thread(_call, swap["rpc_url"], swap["merq_token_address"], "0x313ce567"), 16)
-                    return float(settings.get("merq_price_usd") or 0), "admin_price", dec
                 price, dec = await asyncio.to_thread(pool_price, swap)
-                if price:
+                if price and price > 0:
+                    # Update DB with live price
+                    await db.settings.update_one({"_id": "global"}, {"$set": {"merq_price_usd": price}})
                     return price, "pancakeswap_pool", dec
-                return float(settings.get("merq_price_usd") or 0), "admin_price", dec
             except Exception as e:
-                d.logger.warning(f"TechPass price read failed: {e}")
+                d.logger.warning(f"PancakeSwap price failed: {e}")
+            # 2. Try DexScreener API
+            try:
+                dex_price = await asyncio.to_thread(_dexscreener_price, merq_addr)
+                if dex_price and dex_price > 0:
+                    dec = 18
+                    try:
+                        dec = int(await asyncio.to_thread(_call, swap["rpc_url"], merq_addr, "0x313ce567"), 16)
+                    except Exception:
+                        pass
+                    await db.settings.update_one({"_id": "global"}, {"$set": {"merq_price_usd": dex_price}})
+                    return dex_price, "dexscreener", dec
+            except Exception as e:
+                d.logger.warning(f"DexScreener price failed: {e}")
+        # 3. Fallback to admin-configured price
         return float(settings.get("merq_price_usd") or 0), "admin_price", 18
 
     async def refresh_pending(p, swap, coll="techpass"):

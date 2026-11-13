@@ -2,6 +2,7 @@
 import os
 import logging
 import secrets
+import asyncio
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Any
@@ -815,6 +816,10 @@ async def withdraw_request(req: WithdrawReq, m: dict = Depends(current_member)):
         raise HTTPException(400, "MERQ token is not live yet")
     if amt < settings["min_withdraw"]:
         raise HTTPException(400, f"Minimum withdrawal is {settings['min_withdraw']} USDT")
+    # Check 2 active direct sponsors
+    direct_active = await db.members.count_documents({"sponsor": m["_id"], "status": "active"})
+    if direct_active < 2:
+        raise HTTPException(400, "You need at least 2 Active Direct Sponsors to withdraw. Please complete your 2 Direct Referrals first.")
     if amt > m["available"]:
         raise HTTPException(400, "Insufficient available balance")
     today = now_utc().date().isoformat()
@@ -922,6 +927,7 @@ _price_cache = {"ts": 0, "bnb": None}
 @api.get("/price")
 async def price():
     settings = await get_settings()
+    swap = await get_swap_config()
     bnb = None
     import time
     if time.time() - _price_cache["ts"] > 120:
@@ -935,8 +941,21 @@ async def price():
             logger.warning(f"CoinGecko fetch failed: {e}")
     else:
         bnb = _price_cache["bnb"]
-    return {"merq_usd": settings.get("merq_price_usd", 0.0), "bnb_usd": bnb,
-            "source": "admin-configured", "bnb_source": "coingecko"}
+    # Fetch live MERQ price
+    merq_price = settings.get("merq_price_usd", 0.0)
+    source = "admin-configured"
+    try:
+        from techpass import _dexscreener_price
+        merq_addr = swap.get("merq_token_address")
+        if merq_addr:
+            dex = await asyncio.to_thread(_dexscreener_price, merq_addr)
+            if dex and dex > 0:
+                merq_price = dex
+                source = "dexscreener"
+    except Exception:
+        pass
+    return {"merq_usd": merq_price, "bnb_usd": bnb,
+            "source": source, "bnb_source": "coingecko"}
 
 
 @api.get("/")

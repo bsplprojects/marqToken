@@ -143,15 +143,12 @@ def build_income_engine(d):
             st["filled"] = max(0, await spots_filled(board, addr) - 1)
         st["filled"] += 1
         has_next = b + 1 < len(boards)
-        if len(await active_directs(addr)) < int(r.get("mb_min_directs", 2)):
-            await log("mb_flushed", member=addr, board=board, usd=usd, source=source)
-        else:
-            save = min(usd, float(r["mb_save_per_payout"])) if has_next and not st["upgraded"] else 0.0
-            pay = usd - save
-            st["net"] += pay
-            st["saved"] += save
-            if pay > 0:
-                await credit(addr, "tp_momentum_booster", pay, {"board": board, "from": source, "saved": save}, price)
+        save = min(usd, float(r["mb_save_per_payout"])) if has_next and not st["upgraded"] else 0.0
+        pay = usd - save
+        st["net"] += pay
+        st["saved"] += save
+        if pay > 0:
+            await credit(addr, "tp_momentum_booster", pay, {"board": board, "from": source, "saved": save}, price)
         spots = 2 ** 6 - 2  # 2+4+8+16+32 = 62 spots in 5 levels
         ready = has_next and not st["upgraded"] and st["filled"] >= spots
         if ready:
