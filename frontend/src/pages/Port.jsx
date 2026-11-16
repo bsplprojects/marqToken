@@ -32,7 +32,6 @@ export default function Port() {
   const body = () => {
     if (isLoading || !s) return <SwapNotice state="loading" />;
     if (!s.merq_live) return <SwapNotice state="not_live" />;
-    if (!s.techpass_active) return <TechPassRequired />;
     if (!port.enabled) return <SwapNotice state="disabled" />;
     return <PortBuy portKey={key} port={port} status={s} member={member} onDone={() => qc.invalidateQueries({ queryKey: ["ports"] })} />;
   };
