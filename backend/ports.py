@@ -98,8 +98,6 @@ def build_ports(d):
             raise HTTPException(403, f"{PORTS[port]} purchases are paused")
         if not swap.get("merq_token_address"):
             raise HTTPException(400, "MERQ token is not live yet")
-        if not await has_techpass(m["_id"]):
-            raise HTTPException(403, "An active Merq TechPass is required first")
         if not cfg["min_usd"] <= body.amount_usd <= cfg["max_usd"]:
             raise HTTPException(400, f"Amount must be between ${cfg['min_usd']:,.2f} and ${cfg['max_usd']:,.2f}")
         price, source, dec = await d.live_price(swap, settings)
