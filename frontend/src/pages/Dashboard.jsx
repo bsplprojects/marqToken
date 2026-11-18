@@ -96,8 +96,8 @@ export default function Dashboard() {
 
         {/* network overview */}
         <div className="lg:col-span-4 grid grid-cols-1 gap-6">
-          <StatCard testid="stat-direct" label="Direct Members" value={data.network.direct_members} icon={Users} accent="amber" />
-          <StatCard testid="stat-team" label="Total Team" value={data.network.total_team} icon={Network} accent="cyan" sub={`${data.network.active_members} active`} />
+          <StatCard testid="stat-direct" label="Direct Members" value={data.network.direct_members} icon={Users} accent="amber" className="cursor-pointer hover:border-amber-400/30 transition-colors" onClick={() => navigate("/network")} />
+          <StatCard testid="stat-team" label="Total Team" value={data.network.total_team} icon={Network} accent="cyan" sub={`${data.network.active_members} active`} className="cursor-pointer hover:border-cyan-400/30 transition-colors" onClick={() => navigate("/network")} />
           <StatCard testid="stat-volume" label="Team Volume" value={`$${fmt(data.network.team_volume, 0)}`} icon={TrendingUp} accent="emerald" className="cursor-pointer hover:border-emerald-400/30 transition-colors" onClick={() => navigate("/team-volume")} />
         </div>
       </div>
