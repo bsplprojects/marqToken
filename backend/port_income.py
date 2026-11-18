@@ -165,6 +165,13 @@ def build_port_income(d):
                 await credit(sp, "port_partner_onboarding_rewards", round(claimed["amount_usd"] * r["sponsor_pct"] / 100, 4),
                              {"from": claimed["address"], "purchase": claimed["_id"]}, px)
         await db.port_purchases.update_one({"_id": claimed["_id"]}, {"$set": upd})
+        # Propagate purchase volume up the placement tree
+        await d.propagate_volume(claimed["address"], float(claimed["amount_usd"]))
+        # Update rank after volume change
+        fresh = await db.members.find_one({"_id": claimed["address"]})
+        settings = await d.get_settings()
+        await db.members.update_one({"_id": claimed["address"]}, {"$set": {"rank": d.compute_rank(fresh["team_volume"], settings)}})
+
         for up in await uplines(claimed["address"], 200):
             await check_rank(up, r, px)
 

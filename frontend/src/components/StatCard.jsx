@@ -1,4 +1,4 @@
-export default function StatCard({ label, value, sub, icon: Icon, accent = "amber", testid, className = "" }) {
+export default function StatCard({ label, value, sub, icon: Icon, accent = "amber", testid, className = "", onClick }) {
   const accents = {
     amber: "text-amber-400 bg-amber-400/10",
     emerald: "text-emerald-400 bg-emerald-400/10",
@@ -10,6 +10,7 @@ export default function StatCard({ label, value, sub, icon: Icon, accent = "ambe
   return (
     <div
       data-testid={testid}
+      onClick={onClick}
       className={`glass card-hover rounded-2xl p-5 border border-white/8 ${className}`}
     >
       <div className="flex items-start justify-between">

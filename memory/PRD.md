@@ -18,17 +18,16 @@ Build "MerqON" as a Web3 membership + token utility platform. Features include a
 - Partner Onboarding: $4.8387 deducted, added to MB1 Upgrade Savings & Net Profit
 - MB payouts: $4.8387 savings deduction, 2-direct minimum, 62-spot completion gate
 - GM payouts: 10% deduction applied
-- Withdrawal: USDT → MERQ at live rates, 5% fee, minimum $1, pre-flight treasury check, generic "Withdrawal Failed !!!" error
-- **MERQAi Subscription Deductions**: Displayed on Withdraw page from shared `ai_wallet_balance_ledger` collection
+- Withdrawal: USDT to MERQ at live rates, 5% fee, minimum $1, pre-flight treasury check, generic "Withdrawal Failed !!!" error
+- MERQAi Subscription Deductions: Displayed on Withdraw page from shared ai_wallet_balance_ledger collection
 - Treasury on-chain payout via BSC
 - Comprehensive Admin Panel with RBAC, audit logs, member management
 - Admin "View As" impersonation
 - Port income daily accrual cron
 - Marketing landing page
-- **Important Links**: Admin CRUD with image upload (Emergent Object Storage) + Member showcase page
-- **MerqON Ecosystem menu** (expandable sidebar with 7 sub-pages):
-  - MerqON AI, Token Insights, AI Trade Engine (Algo), Decentralised Wallet, MerqON Pay (Crypto Card), Whitepaper, Refer & Earn
-  - All pages have "Coming Soon" placeholder layouts ready for content
+- Important Links: Admin CRUD with image upload (Emergent Object Storage) + Member showcase page
+- MerqON Ecosystem menu (expandable sidebar with 7 sub-pages)
+- **Team Volume Fix (2026-11-18)**: propagate_volume() now called after TechPass and Port purchases. One-time backfill replays all historical purchases. New /api/network/volume-breakdown endpoint aggregates category-wise volume. New /team-volume page with clickable stat card from Dashboard.
 
 ## Key Collections
 - `members`, `matrix`, `mb_state`, `transactions`, `withdrawals`, `techpass`, `port_purchases`, `important_links`
@@ -36,7 +35,7 @@ Build "MerqON" as a Web3 membership + token utility platform. Features include a
 - `ai_subscriptions` (shared with MERQAi — plan details)
 
 ## Pending / In Progress
-- P0: Full MB/GM algorithm transposition from simulation to live income_engine.py
+- P0: Full MB/GM algorithm transposition from simulation to live income_engine.py (62-spot matrix lock and 10% GM deduction)
 
 ## Upcoming / Future
 - P1: Smart Contracts deployment (NFO.sol, Membership.sol)

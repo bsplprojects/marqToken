@@ -204,6 +204,14 @@ def build_income_engine(d):
             st["saved"] = st.get("saved", 0.0) + save
             st["net"] = st.get("net", 0.0) + pay
             await db.mb_state.replace_one({"_id": sid}, st, upsert=True)
+        # Propagate purchase volume up the placement tree
+        usd_amount = float(tp.get("price_usd", 120.0))
+        await d.propagate_volume(addr, usd_amount)
+        # Update rank after volume change
+        fresh = await db.members.find_one({"_id": addr})
+        settings = await d.get_settings()
+        await db.members.update_one({"_id": addr}, {"$set": {"rank": d.compute_rank(fresh["team_volume"], settings)}})
+
         await mb_enter(addr, 0, r, price)
         await gm_check(addr, r, price)
         if sp:

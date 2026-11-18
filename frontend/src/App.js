@@ -14,6 +14,7 @@ import Swap from "@/pages/Swap";
 import TechPass from "@/pages/TechPass";
 import Port from "@/pages/Port";
 import BoardTrees from "@/pages/BoardTrees";
+import TeamVolume from "@/pages/TeamVolume";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import ImportantLinks from "@/pages/ImportantLinks";
@@ -78,6 +79,7 @@ function App() {
             <Route path="/techpass" element={<Protected><TechPass /></Protected>} />
             <Route path="/ports/:port" element={<Protected><Port /></Protected>} />
             <Route path="/trees" element={<Protected><BoardTrees /></Protected>} />
+            <Route path="/team-volume" element={<Protected><TeamVolume /></Protected>} />
             <Route path="/profile" element={<Protected><Profile /></Protected>} />
             <Route path="/settings" element={<Protected><Settings /></Protected>} />
             <Route path="/admin/*" element={<AdminApp />} />

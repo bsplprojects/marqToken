@@ -510,6 +510,90 @@ async def network_directs(m: dict = Depends(current_member)):
              "principal": round(k["principal"], 2)} for k in kids]
 
 
+
+@api.get("/network/volume-breakdown")
+async def network_volume_breakdown(m: dict = Depends(current_member)):
+    """Aggregate team volume by category (TechPass, Entry Port, Unity Port) across the member's downline."""
+    # Collect all downline member addresses via sponsor chain
+    downline = []
+    queue = [m["_id"]]
+    while queue:
+        cur = queue.pop(0)
+        kids = await db.members.find({"sponsor": cur}, {"_id": 1}).to_list(10000)
+        for k in kids:
+            downline.append(k["_id"])
+            queue.append(k["_id"])
+
+    # TechPass volume: sum price_usd of confirmed techpass purchases by downline
+    tp_vol = 0.0
+    if downline:
+        pipeline = [
+            {"$match": {"address": {"$in": downline}, "status": "confirmed"}},
+            {"$group": {"_id": None, "total": {"$sum": "$price_usd"}}},
+        ]
+        agg = await db.techpass.aggregate(pipeline).to_list(1)
+        tp_vol = round(agg[0]["total"], 2) if agg else 0.0
+
+    # Entry Port volume
+    ep_vol = 0.0
+    if downline:
+        pipeline = [
+            {"$match": {"address": {"$in": downline}, "port": "entry", "status": "confirmed"}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount_usd"}}},
+        ]
+        agg = await db.port_purchases.aggregate(pipeline).to_list(1)
+        ep_vol = round(agg[0]["total"], 2) if agg else 0.0
+
+    # Unity Port volume
+    up_vol = 0.0
+    if downline:
+        pipeline = [
+            {"$match": {"address": {"$in": downline}, "port": "unity", "status": "confirmed"}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount_usd"}}},
+        ]
+        agg = await db.port_purchases.aggregate(pipeline).to_list(1)
+        up_vol = round(agg[0]["total"], 2) if agg else 0.0
+
+    total = round(tp_vol + ep_vol + up_vol, 2)
+
+    # Also include own purchases
+    own_tp = 0.0
+    own_pipeline = [
+        {"$match": {"address": m["_id"], "status": "confirmed"}},
+        {"$group": {"_id": None, "total": {"$sum": "$price_usd"}}},
+    ]
+    agg = await db.techpass.aggregate(own_pipeline).to_list(1)
+    own_tp = round(agg[0]["total"], 2) if agg else 0.0
+
+    own_ep = 0.0
+    own_pipeline = [
+        {"$match": {"address": m["_id"], "port": "entry", "status": "confirmed"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount_usd"}}},
+    ]
+    agg = await db.port_purchases.aggregate(own_pipeline).to_list(1)
+    own_ep = round(agg[0]["total"], 2) if agg else 0.0
+
+    own_up = 0.0
+    own_pipeline = [
+        {"$match": {"address": m["_id"], "port": "unity", "status": "confirmed"}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount_usd"}}},
+    ]
+    agg = await db.port_purchases.aggregate(own_pipeline).to_list(1)
+    own_up = round(agg[0]["total"], 2) if agg else 0.0
+
+    return {
+        "team_volume": round(m["team_volume"], 2),
+        "computed_total": total,
+        "categories": [
+            {"key": "techpass", "label": "Merq TechPass Volume", "team": tp_vol, "self": own_tp},
+            {"key": "entry_port", "label": "Entry Port Volume", "team": ep_vol, "self": own_ep},
+            {"key": "unity_port", "label": "Unity Port Volume", "team": up_vol, "self": own_up},
+        ],
+        "downline_count": len(downline),
+    }
+
+
+
 # ----------------------------- deposit -----------------------------
 class DepositReq(BaseModel):
     amount: float
@@ -1118,6 +1202,28 @@ async def startup():
     except Exception as e:
         logger.warning(f"Port income backfill failed: {e}")
 
+    # --- Volume backfill: replay propagate_volume for all confirmed purchases ---
+    try:
+        vol_done = (await db.settings.find_one({"_id": "global"})).get("volume_backfilled")
+        if not vol_done:
+            logger.info("Running one-time volume backfill...")
+            # Reset all volumes to 0 first
+            await db.members.update_many({}, {"$set": {"team_volume": 0.0, "left_volume": 0.0, "right_volume": 0.0}})
+            # Replay TechPass volumes
+            for tp in await db.techpass.find({"status": "confirmed"}, {"address": 1, "price_usd": 1}).sort("created_at", 1).to_list(100000):
+                await propagate_volume(tp["address"], float(tp.get("price_usd", 120.0)))
+            # Replay Port volumes
+            for pp in await db.port_purchases.find({"status": "confirmed"}, {"address": 1, "amount_usd": 1}).sort("created_at", 1).to_list(100000):
+                await propagate_volume(pp["address"], float(pp["amount_usd"]))
+            # Update ranks
+            for mem in await db.members.find({}, {"_id": 1, "team_volume": 1}).to_list(100000):
+                new_rank = compute_rank(mem["team_volume"], settings)
+                await db.members.update_one({"_id": mem["_id"]}, {"$set": {"rank": new_rank}})
+            await db.settings.update_one({"_id": "global"}, {"$set": {"volume_backfilled": iso(now_utc())}})
+            logger.info("Volume backfill complete")
+    except Exception as e:
+        logger.warning(f"Volume backfill failed: {e}")
+
     # seed rule versions V1 from current settings
     if await db.rule_versions.count_documents({}) == 0:
         base = [
@@ -1174,6 +1280,7 @@ _admin_deps = _types.SimpleNamespace(
     short=short, record_tx=record_tx, fake_tx_hash=fake_tx_hash,
     member_total_income=member_total_income, compute_rank=compute_rank,
     build_sponsor_tree=build_sponsor_tree, build_placement_tree=build_placement_tree,
+    propagate_volume=propagate_volume,
     current_member=current_member, accrued_for_position=accrued_for_position,
     BSCSCAN_BASE=BSCSCAN_BASE, ADMIN_DEMO_ADDRESS=ADMIN_DEMO_ADDRESS,
     get_swap_config=get_swap_config, logger=logger, make_view_jwt=make_view_jwt,
