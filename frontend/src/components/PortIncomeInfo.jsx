@@ -56,7 +56,7 @@ const Ranks = ({ info }) => {
                 <td className="py-2 font-display font-bold text-amber-300">{r.name}</td>
                 <td className="font-mono-merq">${fmt(r.leg_usd, 0)}</td><td className="font-mono-merq">${fmt(r.leg_usd, 0)}</td>
                 <td>{r.need_rank ? `${r.need_count} ${info.ranks[r.need_rank - 1].name}` : "—"}</td>
-                <td className="text-right font-mono-merq">{fmt(r.pct, 1)}% · ${fmt(r.leg_usd * r.pct / 100, 0)}</td>
+                <td className="text-right font-mono-merq">{fmt(r.pct, 1)}% · ${fmt(r.leg_usd * 2 * r.pct / 100, 0)}</td>
               </tr>
             ))}
           </tbody>

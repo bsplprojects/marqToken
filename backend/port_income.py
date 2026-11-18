@@ -142,7 +142,7 @@ def build_port_income(d):
             if not res.modified_count:
                 return
             cur += 1
-            usd = round(rk["leg_usd"] * rk["pct"] / 100, 4)
+            usd = round(rk["leg_usd"] * 2 * rk["pct"] / 100, 4)
             await credit(addr, "port_rank_rewards", usd, {"rank": rk["name"], "leg_usd": rk["leg_usd"], "pct": rk["pct"]}, px)
             await db.rank_awards.insert_one({"_id": secrets.token_hex(12), "member": addr, "rank": rk["name"], "usd": usd,
                                              "legs": legs[:2], "created_at": d.iso(d.now_utc())})
